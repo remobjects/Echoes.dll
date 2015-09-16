@@ -1,0 +1,4 @@
+*.user
+[Bb]in
+[Dd]ebug*/
+obj/
