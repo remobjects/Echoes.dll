@@ -22,6 +22,7 @@ type
     class method FindMatch(aTypeArgs: array of &Type; aPosibilities: List<MethodBase>; args: array of DynamicMetaObject): Tuple<MethodBase, array of Expression, Expression>;
     class method FixGen(aTypeArgs: array of &Type; aType: &Type): &Type;
     class method IsCompatibleParameterType(aSrc: &Type; aType: &Type): Boolean;
+    class method GetImplicitOperator(aSrc, aDest: &Type): MethodInfo;
     class method BetterFunctionMember(aTypeArgs: array of &Type; &Params: array of DynamicMetaObject; aBest: MethodBase; aBestOffsets: array of Int32; aBestIsParams: Integer; aCurrent: MethodBase; aCurrentOffsets: array of Int32; aCurrentIsParams: Integer): Boolean;
     method EqualName(a: MemberInfo): Boolean;
     class method GetTypeDistance(aDest, aSrc: &Type): Integer;
@@ -390,7 +391,9 @@ begin
       exit true;
   if lSrcT in [TypeCode.Char, TypeCode.String] then
     if lDestT = TypeCode.String then exit true;
-  exit aType.IsAssignableFrom(aSrc);
+  if aType.IsAssignableFrom(aSrc) then exit true;
+  if GetImplicitOperator(aSrc, aType) <> nil then exit true;
+  exit false;
 end;
 
 class method OxygeneInvokeMemberBinder.BetterFunctionMember(aTypeArgs: array of &Type; &Params: array of DynamicMetaObject; aBest: MethodBase; aBestOffsets: array of Int32; aBestIsParams: Integer; aCurrent: MethodBase; aCurrentOffsets: array of Int32; aCurrentIsParams: Integer): Boolean;
@@ -596,6 +599,15 @@ end;
 method OxygeneInvokeMemberBinder.EqualName(a: MemberInfo): Boolean;
 begin
   exit String.Equals(a.Name, fName, StringComparison.OrdinalIgnoreCase);
+end;
+
+class method OxygeneInvokeMemberBinder.GetImplicitOperator(aSrc: &Type; aDest: &Type): MethodInfo;
+begin
+  for each item in Enumerable.Concat(aSrc.GetMethods(BindingFlags.Static or BindingFlags.Public), aDest.GetMethods(BindingFlags.Static or BindingFlags.Public)) do begin
+    if item.Name <> 'op_Implicit' then continue;
+    if (item.GetParameters().FirstOrDefault():ParameterType = aSrc) and (item.ReturnType = aDest) then exit item;
+  end;
+  exit nil;
 end;
 
 constructor OxygeneGetMemberBinder(aFlags: OxygeneBinderFlags; aName: String; aCount: Integer; aTypeArgs: Array of &Type);

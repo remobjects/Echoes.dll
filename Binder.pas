@@ -104,10 +104,10 @@ begin
     exit Expression.Call(aType.GetMethod('Parse', [typeOf(String)]), Expression.Convert(aExpr, typeOf(String)));
   end else if (aType = typeOf(String)) and (aCurrType <> aType) then begin
     if aCurrType = typeOf(Char) then 
-      exit Expression.New(typeOf(String).GetConstructor([typeOf(Char), typeOf(Integer)]), Expression.Convert(aExpr, typeOf(Char)))
+      exit Expression.New(typeOf(String).GetConstructor([typeOf(Char), typeOf(Integer)]), Expression.Convert(aExpr, typeOf(Char)), Expression.Constant(1))
     else
       exit Expression.Call(aExpr, typeOf(Object).GetMethod('ToString', []));
-  end else
+  end else 
     exit Expression.Convert(Expression.Convert(aExpr, aCurrType), aType);
 end;
 
