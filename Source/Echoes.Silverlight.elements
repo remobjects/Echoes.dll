@@ -2,10 +2,10 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <ProductVersion>3.5</ProductVersion>
-    <RootNamespace>RemObjects.Oxygene.Dynamic</RootNamespace>
+    <RootNamespace>RemObjects.Elements.Dynamic</RootNamespace>
     <StartupClass />
     <OutputType>library</OutputType>
-    <AssemblyName>RemObjects.Elements.Dynamic</AssemblyName>
+    <AssemblyName>Echoes</AssemblyName>
     <AllowGlobals>False</AllowGlobals>
     <AllowLegacyWith>False</AllowLegacyWith>
     <AllowLegacyOutParams>False</AllowLegacyOutParams>
@@ -14,14 +14,15 @@
     <ApplicationIcon />
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <Name>RemObjects.Elements.Dynamic</Name>
-    <ProjectGuid>{7891b618-21d1-4ca9-a530-eec2d6afe15a}</ProjectGuid>
+    <Name>Echoes.Silverlight</Name>
+    <ProjectTypeGuids>{89896941-7261-4476-8385-4DA3CE9FDB83};{A1591282-1198-4647-A2B1-27E5FF5F6F3B};{656346D9-4656-40DA-A068-22D5425D4639}</ProjectTypeGuids>
     <Company />
+    <ProjectGuid>{fd941037-2605-4957-875d-7496e78796ad}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <Optimize>False</Optimize>
-    <OutputPath>..\..\bin</OutputPath>
-    <DefineConstants>DEBUG;TRACE;</DefineConstants>
+    <OutputPath>..\..\bin\Silverlight</OutputPath>
+    <DefineConstants>DEBUG;TRACE;SILVERLIGHT;</DefineConstants>
     <GeneratePDB>True</GeneratePDB>
     <GenerateMDB>True</GenerateMDB>
     <EnableAsserts>True</EnableAsserts>
@@ -45,9 +46,10 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <Optimize>True</Optimize>
-    <OutputPath>..\..\bin</OutputPath>
-    <GeneratePDB>True</GeneratePDB>
-    <GenerateMDB>True</GenerateMDB>
+    <OutputPath>..\..\bin\Silverlight\</OutputPath>
+    <DefineConstants>SILVERLIGHT;</DefineConstants>
+    <GeneratePDB>False</GeneratePDB>
+    <GenerateMDB>False</GenerateMDB>
     <EnableAsserts>False</EnableAsserts>
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
     <CaptureConsoleOutput>False</CaptureConsoleOutput>
@@ -58,7 +60,7 @@
     <XmlDoc>False</XmlDoc>
     <XmlDocWarningLevel>WarningOnPublicMembers</XmlDocWarningLevel>
     <EnableUnmanagedDebugging>False</EnableUnmanagedDebugging>
-    <DefineConstants />
+    <DefineConstants>SILVERLIGHT</DefineConstants>
     <SuppressWarnings />
     <CodeFlowAnalysis>True</CodeFlowAnalysis>
     <UseXmlDoc>False</UseXmlDoc>
@@ -68,17 +70,6 @@
     <RequireExplicitLocalInitialization>False</RequireExplicitLocalInitialization>
     <FutureHelperClassName />
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Binder.pas" />
     <Compile Include="OxygeneBinaryBinder.pas" />
@@ -98,5 +89,27 @@
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib">
+      <HintPath>c:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\Silverlight\v5.0\mscorlib.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <HintPath>c:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\Silverlight\v5.0\system.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core">
+      <HintPath>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\Silverlight\v5.0\System.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml">
+      <HintPath>c:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\Silverlight\v5.0\System.Xml.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <PropertyGroup>
+    <!-- Indicate we are the Silverlight platform and set the registry base. This needs to be done
+             prior to importing the common targets -->
+    <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>
+    <FrameworkRegistryBase>Software\Microsoft\Microsoft SDKs\$(TargetFrameworkIdentifier)</FrameworkRegistryBase>
+  </PropertyGroup>
+  <ProjectExtensions />
   <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.Echoes.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\Silverlight\v5.0\Microsoft.Silverlight.Common.targets" />
 </Project>

@@ -6,7 +6,7 @@
     <RootNamespace>RemObjects.Elements.Dynamic</RootNamespace>
     <ProjectGuid>{5d0def5c-6ae4-4504-a530-92552fc64418}</ProjectGuid>
     <OutputType>library</OutputType>
-    <AssemblyName>RemObjects.Elements.Dynamic</AssemblyName>
+    <AssemblyName>Echoes</AssemblyName>
     <AllowGlobals>False</AllowGlobals>
     <AllowLegacyWith>False</AllowLegacyWith>
     <AllowLegacyOutParams>False</AllowLegacyOutParams>
@@ -16,7 +16,7 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
     <ProjectTypeGuids>{89896941-7261-4476-8385-4DA3CE9FDB83};{786C830F-07A1-408B-BD7F-6EE04809D6DB};{656346D9-4656-40DA-A068-22D5425D4639}</ProjectTypeGuids>
-    <Name>RemObjects.Elements.Dynamic.PCL</Name>
+    <Name>Echoes.PCL</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <Optimize>False</Optimize>
