@@ -48,11 +48,9 @@ uses
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile('')]
-{$IFNDEF SILVERLIGHT}
 [assembly: AssemblyKeyName('RemObjectsSoftware')]
+{$IFNDEF SILVERLIGHT}
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo('RemObjects.Oxygene.Dynamic.Test, Version=1.0.0.1, Culture=neutral, PublicKeyToken=3df3cad1b7aa5098')]
-{$ELSE}
-[assembly: AssemblyKeyName('RemObjectsSoftwareSilverlight')]
 {$ENDIF}
 implementation
 
