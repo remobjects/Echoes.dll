@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <ProductVersion>3.5</ProductVersion>
-    <RootNamespace>RemObjects.Elements.Dynamic</RootNamespace>
+    <RootNamespace>RemObjects.Oxygene.Dynamic</RootNamespace>
     <ProjectGuid>{5d0def5c-6ae4-4504-a530-92552fc64418}</ProjectGuid>
     <OutputType>library</OutputType>
     <AssemblyName>Echoes</AssemblyName>
