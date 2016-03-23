@@ -35,7 +35,11 @@ begin
     case Operation of
       ExpressionType.Negate: lExpr := Expression.Negate(lExpr);
       ExpressionType.Not: lExpr := Expression.Not(lExpr);
-      ExpressionType.OnesComplement: lExpr := Expression.OnesComplement(lExpr);
+      ExpressionType.OnesComplement: 
+        if lExpr.Type = typeof(Boolean) then 
+          lExpr := Expression.Not(lExpr)
+        else
+          lExpr := Expression.OnesComplement(lExpr);
       ExpressionType.UnaryPlus: lExpr := Expression.UnaryPlus(lExpr);
     else
        raise new OxygeneBinderException(Resources.strInvalidOperator);
