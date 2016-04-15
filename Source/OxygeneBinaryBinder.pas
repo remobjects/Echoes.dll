@@ -87,9 +87,9 @@ begin
       ExpressionType.OrElse:
         begin
           if (&Type.GetTypeCode(lLeft) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
-            TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64]) and 
+            TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Boolean]) and 
               (&Type.GetTypeCode(lRight) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
-            TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64]) then
+            TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Boolean]) then
             lResType := lLeft
           else
             exit new DynamicMetaObject(
