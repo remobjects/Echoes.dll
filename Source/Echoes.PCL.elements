@@ -47,6 +47,7 @@
         <DefineConstants>PCL</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
+	    <Compile Include="Globals.pas"/>
         <Compile Include="Binder.pas"/>
         <Compile Include="OxygeneBinaryBinder.pas"/>
         <Compile Include="OxygeneConversionBinder.pas"/>
