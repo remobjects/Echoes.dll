@@ -189,8 +189,9 @@ begin
       lExpr := Expression.New(ConstructorInfo(lMatch.Item1), lMatch.Item2)
     else if lStatic or lMatch.Item1.IsStatic then
       lExpr := Expression.Call(MethodInfo(lMatch.Item1), lMatch.Item2)
-    else 
+    else begin
       lExpr := Expression.Call(Expression.Convert(target.Expression, target.LimitType), MethodInfo(lMatch.Item1), lMatch.Item2);
+    end;
 
     if (lExpr.Type = nil) or (lExpr.Type = typeOf(Void)) then
       lExpr := Expression.Block(lExpr, Expression.Constant(nil, typeOf(Object)));
@@ -255,7 +256,11 @@ begin
     var lCount := lPars.Length;
     var lDef: Integer := 0;
     var lHasParamsArray: Boolean := false;
-    for j: Integer := 0 to lCount -1 do if ParameterAttributes.HasDefault in lPars[j].Attributes  then inc(lDef);
+    for j: Integer := 0 to lCount -1 do begin
+      if ParameterAttributes.HasDefault in lPars[j].Attributes  then inc(lDef);
+      if ParameterAttributes.Optional in lPars[j].Attributes  then inc(lDef);
+    end;
+    //for j: Integer := 0 to lCount -1 do if ParameterAttributes.HasDefault in lPars[j].Attributes  then inc(lDef);
     if (lCount = 0) or (length(lPars[lCount-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) = 0) then begin
       if (args.Length < lCount - lDef) or (args.Length > lCount) then continue;
       lHasParamsArray := false;
@@ -269,7 +274,9 @@ begin
       while lCurrParO < lCount do begin
         var lPar := lPars[lCurrParO];
         var lParType := FixGen(aTypeArgs,lPar.ParameterType);
-
+        if (lParType.IsByRef) then begin
+          lParType := lParType.GetElementType();
+        end;
         if not lUsesArrayParam and not ((lCurrParO = lCount -1) and (lHasParamsArray) and (parI < args.Length -1)) then begin
           if IsCompatibleParameterType(args[parI].LimitType, lParType) then begin
             lOk := true;
@@ -359,6 +366,12 @@ begin
      lRes[lRes.Length-1] := Expression.NewArrayInit(lPars[lPars.Length-1].ParameterType.GetElementType, lArrayParams);
   end;
   for i: Integer := 0 to lRes.Length -1 do begin
+    if (lPars[i].IsOptional) then begin
+      //var varExpr := Expression.Variable(lPars[i].ParameterType.GetElementType(), "param" + i.ToString());
+      //var lLocal := Expression.Block([varExpr], [Expression.Assign(varExpr, Expression.Constant(lPars[i].RawDefaultValue))]);
+      //lRes[i] := lLocal;
+      lRes[i] := Expression.Constant(lPars[i].{$IFDEF PCL}DefaultValue{$ELSE}RawDefaultValue{$ENDIF}, lPars[i].ParameterType.GetElementType());
+    end;
     if lRes[i] = nil then begin
       lRes[i] := Expression.Constant(lPars[i].{$IFDEF PCL}DefaultValue{$ELSE}RawDefaultValue{$ENDIF}, lPars[i].ParameterType);
     end;

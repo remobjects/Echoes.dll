@@ -192,6 +192,8 @@ begin
     TypeCode.UInt32: begin n1 := 3;lUnassigned := true; end;
     TypeCode.UInt64: begin n1 := 4; lUnassigned := true; end;
   else 
+    if OxygeneInvokeMemberBinder.GetImplicitOperator(aRight, aLeft) <> nil then exit aLeft;
+    if OxygeneInvokeMemberBinder.GetImplicitOperator(aLeft, aRight) <> nil then exit aRight;
     exit nil;
   end; // case
   case &Type.GetTypeCode(aRight) of

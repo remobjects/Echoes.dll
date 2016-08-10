@@ -108,7 +108,7 @@ begin
     else
       exit Expression.Call(aExpr, typeOf(Object).GetMethod('ToString', []));
   end else 
-    exit Expression.Convert(Expression.Convert(aExpr, aCurrType), aType);
+    exit Expression.Convert(Expression.Convert(aExpr, aCurrType), iif(aType.IsByRef, aType.GetElementType(), aType));
 end;
 
 constructor OxygeneArgument(aMode: OxygeneArgumentMode);
