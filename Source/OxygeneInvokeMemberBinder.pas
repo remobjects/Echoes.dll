@@ -367,10 +367,8 @@ begin
   end;
   for i: Integer := 0 to lRes.Length -1 do begin
     if (lPars[i].IsOptional) then begin
-      //var varExpr := Expression.Variable(lPars[i].ParameterType.GetElementType(), "param" + i.ToString());
-      //var lLocal := Expression.Block([varExpr], [Expression.Assign(varExpr, Expression.Constant(lPars[i].RawDefaultValue))]);
-      //lRes[i] := lLocal;
-      lRes[i] := Expression.Constant(lPars[i].{$IFDEF PCL}DefaultValue{$ELSE}RawDefaultValue{$ENDIF}, lPars[i].ParameterType.GetElementType());
+      if assigned(lPars[i].ParameterType.GetElementType()) then
+        lRes[i] := Expression.Constant(lPars[i].{$IFDEF PCL}DefaultValue{$ELSE}RawDefaultValue{$ENDIF}, lPars[i].ParameterType.GetElementType())
     end;
     if lRes[i] = nil then begin
       lRes[i] := Expression.Constant(lPars[i].{$IFDEF PCL}DefaultValue{$ELSE}RawDefaultValue{$ENDIF}, lPars[i].ParameterType);
