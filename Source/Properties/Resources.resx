@@ -147,4 +147,7 @@
   <data name="strAmbigiousOverloadStr" xml:space="preserve">
     <value>Ambigious overload</value>
   </data>
+  <data name="strNoIndexedProperties" xml:space="preserve">
+    <value>No indexed properties defined on "{0}"</value>
+  </data>
 </root>
