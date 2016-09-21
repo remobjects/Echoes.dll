@@ -17,6 +17,8 @@ type
     fFlags: OxygeneBinderFlags;
     fTypeArgs: array of &Type;
     fName: String;
+    class method GetIndexedPropertAccessors(aType: &Type; aName: String; aSet: Boolean): List<MethodBase>;
+    class method GetIndexedEntryType(aType: &Type): &Type;
     class method GetPropertyAccessors(aType: &Type; aName: String; aStatic, aSet: Boolean): List<MethodBase>;
     class method Failure(target: DynamicMetaObject; args: array of DynamicMetaObject; errorSuggestion: DynamicMetaObject; msg: String): DynamicMetaObject;
     class method FindMatch(aTypeArgs: array of &Type; aPosibilities: List<MethodBase>; args: array of DynamicMetaObject): Tuple<MethodBase, array of Expression, Expression>;
@@ -56,6 +58,29 @@ type
     constructor(aFlags: OxygeneBinderFlags; aName: String; aCount: Integer; aTypeArgs: Array of &Type);
     method FallbackSetMember(target, value, errorSuggestion: DynamicMetaObject): DynamicMetaObject; override;
   end;
+
+  OxygeneGetIndexBinder = public class(GetIndexBinder)
+  private
+    fFlags: OxygeneBinderFlags;
+    fArgs: Array of OxygeneArgument;
+    fTypeArgs: Array of &Type;
+    fName: String;
+  public
+    constructor(aFlags: OxygeneBinderFlags; aName: String; aArgs: Array of OxygeneArgument; aTypeArgs: Array of &Type);
+    method FallbackGetIndex(target: DynamicMetaObject; indexes: array of DynamicMetaObject; errorSuggestion: DynamicMetaObject): DynamicMetaObject; override;
+  end;
+
+  OxygeneSetIndexBinder = public class(SetIndexBinder)
+  private
+    fFlags: OxygeneBinderFlags;
+    fArgs: Array of OxygeneArgument;
+    fTypeArgs: Array of &Type;
+    fName: String;
+  public
+    constructor(aFlags: OxygeneBinderFlags; aName: String; aArgs: Array of OxygeneArgument; aTypeArgs: Array of &Type);
+    method FallbackSetIndex(target: DynamicMetaObject; indexes: array of DynamicMetaObject; value: DynamicMetaObject; errorSuggestion: DynamicMetaObject): DynamicMetaObject; override;
+  end;
+
 implementation
 
 method OxygeneInvokeMemberBinder.FallbackInvoke(target: System.Dynamic.DynamicMetaObject; args: array of System.Dynamic.DynamicMetaObject; errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject;
@@ -210,6 +235,24 @@ begin
   inherited constructor(aName, true, new CallInfo(aCount));
   fFlags := aFlags;
   fTypeArgs := aTypeArgs;
+end;
+
+class method OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(aType: &Type; aName: String; aSet: Boolean): List<MethodBase>;
+begin
+  var lProperties := aType.GetProperties(BindingFlags.Static or BindingFlags.Instance or BindingFlags.Public or BindingFlags.FlattenHierarchy);
+  if lProperties <> nil then lProperties := lProperties.Where(a->(a.GetIndexParameters().Length > 0) and ((aName = nil) or (a.Name.ToUpper = aName.ToUpper))).ToArray;
+  if length(lProperties) = 0 then exit nil;
+  result := new List<MethodBase>();
+  for each el in lProperties do begin
+    var lMeth := if aSet then el.GetSetMethod(false) else el.GetGetMethod(false);
+    if lMeth <> nil then result.Add(lMeth);
+  end;
+end;
+class method OxygeneInvokeMemberBinder.GetIndexedEntryType(aType: &Type): &Type;
+begin
+  if (aType.HasElementType) then exit aType.GetElementType();
+  if (aType.IsGenericType) then exit aType.GetGenericArguments().Single();
+  exit aType;
 end;
 
 class method OxygeneInvokeMemberBinder.GetPropertyAccessors(aType: &Type; aName: String; aStatic, aSet: Boolean): List<MethodBase>;
@@ -672,19 +715,21 @@ begin
     end;
 
     var lField := lType.GetField(Name, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
+    if (lField = nil) then lField := lType.GetField(Name, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
     if (lField <> nil) then begin
-        
-      var lExpr: Expression;
-      lExpr := Expression.Field(Expression.Convert(target.Expression, target.LimitType), lField);
+
+      var lExpr: Expression := Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField);
       if (lExpr.Type.IsValueType)  then
         lExpr := Expression.Convert(lExpr, typeOf(Object));
       exit new DynamicMetaObject(lExpr, lRestrict);
     end;
 
     lPosibilities := OxygeneInvokeMemberBinder.GetPropertyAccessors(lType, fName, false, false);
+    if (lPosibilities = nil) then
+      lPosibilities := OxygeneInvokeMemberBinder.GetPropertyAccessors(lType, fName, true,  false);
     if (OxygeneBinderFlags.GetMember in fFlags) and (lPosibilities = nil)  then begin
-      var lPos := lType.GetMethods(BindingFlags.Public or BindingFlags.Instance);
-      if lPos <> nil then lPos := lPos.Where(a->a.Name = fName).ToArray;
+      var lPos := lType.GetMethods(BindingFlags.Public or BindingFlags.Instance or BindingFlags.Static);
+      if lPos <> nil then lPos := lPos.Where(a->a.Name.ToUpper = fName.ToUpper).ToArray;
       if length(lPos) = 0 then exit OxygeneInvokeMemberBinder.Failure(target, nil, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
       lPosibilities := new List<MethodBase>();
       for each el in lPos do 
@@ -709,7 +754,7 @@ begin
   try
     if lMatch.Item1 is ConstructorInfo then
       lExpr := Expression.New(ConstructorInfo(lMatch.Item1), lMatch.Item2)
-    else if lStatic then
+    else if lStatic or lMatch.Item1.IsStatic then
       lExpr := Expression.Call(MethodInfo(lMatch.Item1), lMatch.Item2)
     else 
       lExpr := Expression.Call(Expression.Convert(target.Expression, target.LimitType), MethodInfo(lMatch.Item1), lMatch.Item2);
@@ -769,14 +814,16 @@ begin
     end;
 
     var lField := lType.GetField(Name, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
+    if lField = nil then lField := lType.GetField(Name, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
     if assigned(lField) then begin
-      var lExpr: Expression;
-          lExpr := Expression.Assign(Expression.Field(Expression.Convert(target.Expression, target.LimitType), lField),  OxygeneBinder.IntConvert(value.Expression, value.LimitType, lField.FieldType));
+      var lExpr: Expression := Expression.Assign(Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField),  OxygeneBinder.IntConvert(value.Expression, value.LimitType, lField.FieldType));
       if (lExpr.Type.IsValueType)  then
         lExpr := Expression.Convert(lExpr, typeOf(Object));
       exit new DynamicMetaObject(lExpr, lRestrict);
     end;
     lPosibilities := OxygeneInvokeMemberBinder.GetPropertyAccessors(lType, fName, false, true);
+    if (lPosibilities = nil) then
+      lPosibilities := OxygeneInvokeMemberBinder.GetPropertyAccessors(lType, fName, true,  true);
     if lPosibilities = nil then
       exit OxygeneInvokeMemberBinder.Failure(target, [value], errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
   end;
@@ -796,9 +843,158 @@ begin
   try
     if lMatch.Item1 is ConstructorInfo then
       lExpr := Expression.New(ConstructorInfo(lMatch.Item1), lMatch.Item2)
-    else if lStatic then
+    else if lStatic or lMatch.Item1.IsStatic then
       lExpr := Expression.Call(MethodInfo(lMatch.Item1), lMatch.Item2)
-    else 
+    else
+      lExpr := Expression.Call(Expression.Convert(target.Expression, target.LimitType), MethodInfo(lMatch.Item1), lMatch.Item2);
+
+    if (lExpr.Type = nil) or (lExpr.Type = typeOf(Void)) then
+      lExpr := Expression.Block(lExpr, Expression.Constant(nil, typeOf(Object)));
+  except
+    on e: Exception do begin
+      lExpr := Expression.Block(Expression.Throw(Expression.Constant(e)), Expression.Constant(nil, typeOf(Object)));
+    end;
+  end;
+  if (lExpr.Type.IsValueType)  then
+    lExpr := Expression.Convert(lExpr, typeOf(Object));
+  exit new DynamicMetaObject(lExpr, lRestrict);
+
+end;
+
+constructor OxygeneGetIndexBinder(aFlags: OxygeneBinderFlags; aName: String; aArgs: Array of OxygeneArgument; aTypeArgs: Array of &Type);
+begin
+  inherited constructor(new CallInfo(length(aArgs) - 1));
+  fFlags := aFlags;
+  fArgs := aArgs;
+  fTypeArgs := aTypeArgs;
+  fName := aName;
+end;
+
+method OxygeneGetIndexBinder.FallbackGetIndex(target: DynamicMetaObject; indexes: array of DynamicMetaObject; errorSuggestion: DynamicMetaObject): DynamicMetaObject;
+begin
+  var lStatic := OxygeneBinderFlags.StaticCall in fFlags;
+  var lPosibilities: List<MethodBase>;
+  var lRestrict := OxygeneBinder.Restrict(nil, target);
+  var lType := target.LimitType;
+
+  if String.IsNullOrEmpty(fName) then begin
+    var lDefault := array of DefaultMemberAttribute(lType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;
+    if lDefault = nil then exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, Resources.strNoDefaultProperty); // Normal exit for indexed access on objects implementing IDynamicMetaObjectProvider
+    fName := lDefault.MemberName;
+  end;
+
+  var lField := lType.GetField(fName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
+  if lField = nil then lField := lType.GetField(fName, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
+  if (lField <> nil) then begin
+    var lExpr: Expression;
+    lExpr := Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField);
+    lExpr := Expression.ArrayAccess(lExpr, indexes.Select(i->i.Expression));
+    exit new DynamicMetaObject(lExpr, lRestrict);
+  end;
+
+  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, fName, false);
+  if (lPosibilities = nil) and (fName <> nil)  then begin
+    var lPos := lType.GetMethods(BindingFlags.Public or BindingFlags.Instance or BindingFlags.Static);
+    if lPos <> nil then lPos := lPos.Where(a->a.Name.ToUpper = fName.ToUpper).ToArray;
+    if length(lPos) = 0 then exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
+    lPosibilities := new List<MethodBase>();
+    for each el in lPos do
+      lPosibilities.Add(el);
+  end;
+
+  if lPosibilities = nil then
+    exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, String.Format(Resources.strNoIndexedProperties, lType));
+
+  // calls, or finds field or property;
+  // name = null means default property (for get/set member)
+  // name = null means ctor for staticcall without get/set
+  // both instance and static call needs a "self" as the first parameter. (Static needs a System.Type instance)
+  var lExpr: Expression;
+
+  var lMatch := OxygeneInvokeMemberBinder.FindMatch(fTypeArgs, lPosibilities, indexes);
+  if lMatch = nil then begin
+    exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, Resources.strNoOverloadWithTheseParameters);
+  end;
+  if lMatch.Item3 <> nil then
+    lExpr := lMatch.Item3
+  else
+  try
+    if lMatch.Item1 is ConstructorInfo then
+      lExpr := Expression.New(ConstructorInfo(lMatch.Item1), lMatch.Item2)
+    else if lStatic or lMatch.Item1.IsStatic then
+      lExpr := Expression.Call(MethodInfo(lMatch.Item1), lMatch.Item2)
+    else begin
+      lExpr := Expression.Call(Expression.Convert(target.Expression, target.LimitType), MethodInfo(lMatch.Item1), lMatch.Item2);
+    end;
+
+    if (lExpr.Type = nil) or (lExpr.Type = typeOf(Void)) then
+      lExpr := Expression.Block(lExpr, Expression.Constant(nil, typeOf(Object)));
+  except
+    on e: Exception do begin
+      lExpr := Expression.Block(Expression.Throw(Expression.Constant(e)), Expression.Constant(nil, typeOf(Object)));
+    end;
+  end;
+  if (lExpr.Type.IsValueType)  then
+    lExpr := Expression.Convert(lExpr, typeOf(Object));
+  exit new DynamicMetaObject(lExpr, lRestrict);
+end;
+
+constructor OxygeneSetIndexBinder(aFlags: OxygeneBinderFlags; aName: String; aArgs: Array of OxygeneArgument; aTypeArgs: Array of &Type);
+begin
+  inherited constructor(new CallInfo(length(aArgs) - 1));
+  fFlags := aFlags;
+  fArgs := aArgs;
+  fTypeArgs := aTypeArgs;
+  fName := aName;
+end;
+
+method OxygeneSetIndexBinder.FallbackSetIndex(target: DynamicMetaObject; indexes: array of DynamicMetaObject; value: DynamicMetaObject; errorSuggestion: DynamicMetaObject): DynamicMetaObject;
+begin
+  var lStatic := OxygeneBinderFlags.StaticCall in fFlags;
+  var lPosibilities: List<MethodBase>;
+  var lRestrict := OxygeneBinder.Restrict(nil, target);
+  var lType := target.LimitType;
+  var args:= indexes.Concat([value]).ToArray;
+
+  if String.IsNullOrEmpty(fName) then begin
+    var lDefault := array of DefaultMemberAttribute(lType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;
+    if lDefault = nil then exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, Resources.strNoDefaultProperty); // Normal exit for indexed access on objects implementing IDynamicMetaObjectProvider
+    fName := lDefault.MemberName;
+  end;
+
+  var lField := lType.GetField(fName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
+  if lField = nil then lField := lType.GetField(fName, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
+  if (lField <> nil) then begin
+    var lFieldEntryType: &Type := OxygeneInvokeMemberBinder.GetIndexedEntryType(lField.FieldType);
+    var lExpr: Expression := Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField);
+    lExpr := Expression.ArrayAccess(lExpr, indexes.Select(i->i.Expression));
+    lExpr := Expression.Assign(lExpr, OxygeneBinder.IntConvert(value.Expression, value.LimitType, lFieldEntryType));
+    exit new DynamicMetaObject(lExpr, lRestrict);
+  end;
+
+  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, fName, true);
+  if lPosibilities = nil then
+    exit OxygeneInvokeMemberBinder.Failure(target, args, errorSuggestion, String.Format(Resources.strNoIndexedProperties, lType));
+
+  // calls, or finds field or property;
+  // name = null means default property (for get/set member)
+  // name = null means ctor for staticcall without get/set
+  // both instance and static call needs a "self" as the first parameter. (Static needs a System.Type instance)
+  var lExpr: Expression;
+
+  var lMatch := OxygeneInvokeMemberBinder.FindMatch(fTypeArgs, lPosibilities, args);
+  if lMatch = nil then begin
+    exit OxygeneInvokeMemberBinder.Failure(target, args, errorSuggestion, Resources.strNoOverloadWithTheseParameters);
+  end;
+  if lMatch.Item3 <> nil then
+    lExpr := lMatch.Item3
+  else
+  try
+    if lMatch.Item1 is ConstructorInfo then
+      lExpr := Expression.New(ConstructorInfo(lMatch.Item1), lMatch.Item2)
+    else if lStatic or lMatch.Item1.IsStatic then
+      lExpr := Expression.Call(MethodInfo(lMatch.Item1), lMatch.Item2)
+    else
       lExpr := Expression.Call(Expression.Convert(target.Expression, target.LimitType), MethodInfo(lMatch.Item1), lMatch.Item2);
 
     if (lExpr.Type = nil) or (lExpr.Type = typeOf(Void)) then

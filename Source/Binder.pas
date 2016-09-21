@@ -79,10 +79,17 @@ end;
 class method OxygeneBinder.InvokeMember(aFlags: OxygeneBinderFlags; aName: String; aTypeArgs: Array of &Type;
       aArgs: Array of OxygeneArgument): CallSiteBinder;
 begin
-  if (OxygeneBinderFlags.SetMember in aFlags) and (length(aArgs) = 1) then 
-    exit new OxygeneSetMemberBinder(aFlags, aName, length(aArgs), aTypeArgs)
-  else if (OxygeneBinderFlags.GetMember in aFlags) and (length(aArgs) = 0) then 
-    exit new OxygeneGetMemberBinder(aFlags, aName, length(aArgs), aTypeArgs);
+  if (OxygeneBinderFlags.SetMember in aFlags) then begin
+    if (length(aArgs) = 1) then
+      exit new OxygeneSetMemberBinder(aFlags, aName, length(aArgs), aTypeArgs)
+    else
+      exit new OxygeneSetIndexBinder(aFlags, aName, aArgs, aTypeArgs)
+  end else if (OxygeneBinderFlags.GetMember in aFlags) then begin
+    if (length(aArgs) = 0) then
+      exit new OxygeneGetMemberBinder(aFlags, aName, length(aArgs), aTypeArgs)
+    else
+      exit new OxygeneGetIndexBinder(aFlags, aName, aArgs, aTypeArgs)
+  end;
   exit new OxygeneInvokeMemberBinder(aFlags, aName, length(aArgs), aTypeArgs);
 end;
 
