@@ -68,6 +68,11 @@ type
             exit ResourceManager.GetString('strCannotInvokeNonDelegate', resourceCulture);
         end;
         
+        class method get_strInvalidIndexedFieldType: System.String;
+        begin
+            exit ResourceManager.GetString('strInvalidIndexedFieldType', resourceCulture);
+        end;
+        
         class method get_strInvalidOperands: System.String;
         begin
             exit ResourceManager.GetString('strInvalidOperands', resourceCulture);
@@ -117,6 +122,7 @@ type
         class property strAmbigiousOverload: System.String read get_strAmbigiousOverload;
         class property strAmbigiousOverloadStr: System.String read get_strAmbigiousOverloadStr;
         class property strCannotInvokeNonDelegate: System.String read get_strCannotInvokeNonDelegate;
+        class property strInvalidIndexedFieldType: System.String read get_strInvalidIndexedFieldType;
         class property strInvalidOperands: System.String read get_strInvalidOperands;
         class property strInvalidOperator: System.String read get_strInvalidOperator;
         class property strNoConstructors: System.String read get_strNoConstructors;

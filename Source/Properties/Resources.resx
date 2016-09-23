@@ -150,4 +150,7 @@
   <data name="strNoIndexedProperties" xml:space="preserve">
     <value>No indexed properties defined on "{0}"</value>
   </data>
+  <data name="strInvalidIndexedFieldType" xml:space="preserve">
+    <value>Invalid indexed field type "{0}" defined on "{1}", must be Array</value>
+  </data>
 </root>
