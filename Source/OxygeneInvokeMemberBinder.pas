@@ -17,7 +17,7 @@ type
     fFlags: OxygeneBinderFlags;
     fTypeArgs: array of &Type;
     fName: String;
-    class method GetIndexedPropertAccessors(aType: &Type; aName: String; aSet: Boolean): List<MethodBase>;
+    class method GetIndexedPropertAccessors(aType: &Type; aName: String; aSet, aStatic: Boolean): List<MethodBase>;
     class method GetIndexedEntryType(aType: &Type): &Type;
     class method GetPropertyAccessors(aType: &Type; aName: String; aStatic, aSet: Boolean): List<MethodBase>;
     class method Failure(target: DynamicMetaObject; args: array of DynamicMetaObject; errorSuggestion: DynamicMetaObject; msg: String): DynamicMetaObject;
@@ -217,9 +217,9 @@ begin
   fTypeArgs := aTypeArgs;
 end;
 
-class method OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(aType: &Type; aName: String; aSet: Boolean): List<MethodBase>;
+class method OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(aType: &Type; aName: String; aSet, aStatic: Boolean): List<MethodBase>;
 begin
-  var lProperties := aType.GetProperties(BindingFlags.Static or BindingFlags.Instance or BindingFlags.Public or BindingFlags.FlattenHierarchy);
+  var lProperties := aType.GetProperties(BindingFlags.Static or (if aStatic then BindingFlags(0) else BindingFlags.Instance) or BindingFlags.Public or BindingFlags.FlattenHierarchy);
   if lProperties <> nil then lProperties := lProperties.Where(a->(a.GetIndexParameters().Length > 0) and ((aName = nil) or (a.Name.ToUpper = aName.ToUpper))).ToArray;
   if length(lProperties) = 0 then exit nil;
   result := new List<MethodBase>();
@@ -842,6 +842,7 @@ begin
   var lPosibilities: List<MethodBase>;
   var lRestrict := OxygeneBinder.Restrict(nil, target);
   var lType := target.LimitType;
+  if lStatic and (target.HasValue) and (target.Value is &Type) then lType := target.Value as &Type;
 
   if String.IsNullOrEmpty(fName) then begin
     var lDefault := array of DefaultMemberAttribute(lType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;
@@ -849,7 +850,7 @@ begin
     fName := lDefault.MemberName;
   end;
 
-  var lField := lType.GetField(fName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
+  var lField := if not lStatic then lType.GetField(fName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
   if lField = nil then lField := lType.GetField(fName, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
   if (lField <> nil) then begin
     var lExpr: Expression := Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField);
@@ -859,7 +860,7 @@ begin
       var lDefault := array of DefaultMemberAttribute(lField.FieldType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;
       if lDefault = nil then
         exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, String.Format(Resources.strInvalidIndexedFieldType, lField.FieldType, lType));
-      lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lField.FieldType, lDefault.MemberName, false);
+      lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lField.FieldType, lDefault.MemberName, false, lStatic);
       var lMatch := OxygeneInvokeMemberBinder.FindMatch(fTypeArgs, lPosibilities, indexes);
       if lMatch = nil then
         exit OxygeneInvokeMemberBinder.Failure(target, nil, errorSuggestion, Resources.strNoOverloadWithTheseParameters);
@@ -868,7 +869,7 @@ begin
     exit new DynamicMetaObject(lExpr, lRestrict);
   end;
 
-  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, fName, false);
+  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, fName, false, lStatic);
   if (lPosibilities = nil) and (fName <> nil)  then begin
     var lPos := lType.GetMethods(BindingFlags.Public or BindingFlags.Instance or BindingFlags.Static);
     if lPos <> nil then lPos := lPos.Where(a->a.Name.ToUpper = fName.ToUpper).ToArray;
@@ -909,6 +910,7 @@ begin
   var lPosibilities: List<MethodBase>;
   var lRestrict := OxygeneBinder.Restrict(nil, target);
   var lType := target.LimitType;
+  if lStatic and (target.HasValue) and (target.Value is &Type) then lType := target.Value as &Type;
   var args:= indexes.Concat([value]).ToArray;
 
   if String.IsNullOrEmpty(fName) then begin
@@ -917,7 +919,7 @@ begin
     fName := lDefault.MemberName;
   end;
 
-  var lField := lType.GetField(fName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
+  var lField := if not lStatic then lType.GetField(fName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
   if lField = nil then lField := lType.GetField(fName, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
   if (lField <> nil) then begin
     var lFieldEntryType: &Type := OxygeneInvokeMemberBinder.GetIndexedEntryType(lField.FieldType);
@@ -929,7 +931,7 @@ begin
       var lDefault := array of DefaultMemberAttribute(lField.FieldType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;
       if lDefault = nil then
         exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, String.Format(Resources.strInvalidIndexedFieldType, lField.FieldType, lType));
-      lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lField.FieldType, lDefault.MemberName, true);
+      lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lField.FieldType, lDefault.MemberName, true, lStatic);
       var lMatch := OxygeneInvokeMemberBinder.FindMatch(fTypeArgs, lPosibilities, args);
       if lMatch = nil then
         exit OxygeneInvokeMemberBinder.Failure(target, nil, errorSuggestion, Resources.strNoOverloadWithTheseParameters);
@@ -938,7 +940,7 @@ begin
     exit new DynamicMetaObject(lExpr, lRestrict);
   end;
 
-  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, fName, true);
+  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, fName, true, lStatic);
   if lPosibilities = nil then
     exit OxygeneInvokeMemberBinder.Failure(target, args, errorSuggestion, String.Format(Resources.strNoIndexedProperties, lType));
 
