@@ -80,13 +80,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Globals.pas"/>
+    <Compile Include="Globals.pas" />
     <Compile Include="Binder.pas" />
     <Compile Include="OxygeneBinaryBinder.pas" />
     <Compile Include="OxygeneConversionBinder.pas" />
     <Compile Include="OxygeneInvokeMemberBinder.pas" />
     <Compile Include="OxygeneUnaryBinder.pas" />
     <Compile Include="Properties\AssemblyInfo.pas" />
+    <Compile Include="Set.pas" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
