@@ -13,6 +13,9 @@ operator Pow(a, b: Double): Double; public;
 operator Pow(a, b: Int64): Int64; public;
 operator Pow(a, b: Integer): Integer; public;
 
+type
+  AnsiChar = public record mapped to Byte end;
+
 implementation
 
 
