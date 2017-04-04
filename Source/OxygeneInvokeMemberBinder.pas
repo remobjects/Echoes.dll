@@ -390,11 +390,20 @@ begin
   end;
   for i: Integer := 0 to lRes.Length -1 do begin
     if (lPars[i].IsOptional) then begin
-      if assigned(lPars[i].ParameterType.GetElementType()) then
-        lRes[i] := Expression.Constant(lPars[i].{$IFDEF PCL}DefaultValue{$ELSE}RawDefaultValue{$ENDIF}, lPars[i].ParameterType.GetElementType())
+      if assigned(lPars[i].ParameterType.GetElementType()) then begin
+        {$IFDEF PCL}
+        lRes[i] := Expression.Constant(lPars[i].DefaultValue, lPars[i].ParameterType.GetElementType())
+        {$ELSE}
+        lRes[i] := Expression.Constant(lPars[i].RawDefaultValue, lPars[i].ParameterType.GetElementType())
+        {$ENDIF}
+      end;
     end;
     if lRes[i] = nil then begin
-      lRes[i] := Expression.Constant(lPars[i].{$IFDEF PCL}DefaultValue{$ELSE}RawDefaultValue{$ENDIF}, lPars[i].ParameterType);
+      {$IFDEF PCL}
+      lRes[i] := Expression.Constant(lPars[i].DefaultValue, lPars[i].ParameterType);
+      {$ELSE}
+      lRes[i] := Expression.Constant(lPars[i].RawDefaultValue, lPars[i].ParameterType);
+      {$ENDIF}
     end;
   end;
   exit new Tuple<MethodBase,array of Expression,Expression>(lCurrent, lRes, nil);
