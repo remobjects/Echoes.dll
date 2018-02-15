@@ -385,7 +385,6 @@ begin
     exit true;
   end;
   
-  var expr_BB: array of Byte := b.fValue;
   num := Math.Max(length(a.fValue), length( b.fValue)) - 1;
   num2 := 0;
   if num2 <= num then begin
@@ -403,7 +402,7 @@ end;
 
 class operator &Set<T>.Subtract(a: &Set<T>; b: &Set<T>): &Set<T>;
 begin
-  if (Object.ReferenceEquals(a, nil) and Object.ReferenceEquals(b, nil)) or Object.ReferenceEquals(b, nil) then begin
+  if Object.ReferenceEquals(a, nil) then begin
     exit nil;
   end;
   if Object.ReferenceEquals(b, nil) then begin
