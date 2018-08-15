@@ -92,7 +92,7 @@ begin
       &Array.Copy(fValue, lSet.fValue, fValue.Length);
     end
     else begin
-      lset := new &Set<T>(fValue);
+      lSet := new &Set<T>(fValue);
     end;
   end;
   var num: Integer := aStart;
@@ -103,7 +103,7 @@ begin
       inc(num);
     until not num <> num2;
   end;
-  exit lset;
+  exit lSet;
 end;
 
 method &Set<T>.SetRange(aStart: T; aEnd: T): &Set<T>;
@@ -137,7 +137,7 @@ begin
       inc(num);
     until not num <> num2;
   end;
-  exit lset;
+  exit lSet;
 end;
 
 method &Set<T>.Clear(i: T): &Set<T>;
@@ -157,7 +157,7 @@ begin
       &Array.Copy(fValue, lSet.fValue, fValue.Length);
     end
     else begin
-      lset := new &Set<T>(fValue);
+      lSet := new &Set<T>(fValue);
     end;
   end;
   lSet.Put(i, false);
@@ -210,9 +210,9 @@ begin
   if Object.ReferenceEquals(self, nil) then begin
     exit new Byte[0];
   end;
-  var &array: array of Byte := new Byte[fValue.Length];
-  &Array.Copy(fValue, &array, &array.Length);
-  exit &array;
+  var lArray: array of Byte := new Byte[fValue.Length];
+  lArray.Copy(fValue, lArray, lArray.Length);
+  exit lArray;
 end;
 
 method &Set<T>.GetEnumerator: IEnumerator<T>;
@@ -384,7 +384,7 @@ begin
     end;
     exit true;
   end;
-  
+
   num := Math.Max(length(a.fValue), length( b.fValue)) - 1;
   num2 := 0;
   if num2 <= num then begin
@@ -486,7 +486,7 @@ begin
 end;
 
 constructor &Set<T>;
-begin 
+begin
   constructor(nil);
 end;
 
@@ -497,7 +497,7 @@ begin
     fConvertFrom := new SetFunc<T,Integer>(EnumConverter);
   end
   else begin
-    case typeFromHandle.FullName of 
+    case typeFromHandle.FullName of
       'System.Byte': fConvertFrom := new SetFunc<T,Integer>(ByteConverter);
       'System.SByte': fConvertFrom := new SetFunc<T,Integer>(SByteConverter);
       'System.Char': fConvertFrom := new SetFunc<T,Integer>(CharConverter);

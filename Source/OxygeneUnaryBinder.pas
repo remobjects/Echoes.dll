@@ -35,8 +35,8 @@ begin
     case Operation of
       ExpressionType.Negate: lExpr := Expression.Negate(lExpr);
       ExpressionType.Not: lExpr := Expression.Not(lExpr);
-      ExpressionType.OnesComplement: 
-        if lExpr.Type = typeof(Boolean) then 
+      ExpressionType.OnesComplement:
+        if lExpr.Type = typeOf(Boolean) then
           lExpr := Expression.Not(lExpr)
         else
           lExpr := Expression.OnesComplement(lExpr);
