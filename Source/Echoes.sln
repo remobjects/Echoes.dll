@@ -1,18 +1,18 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# RemObjects Fire
 Project("{656346D9-4656-40DA-A068-22D5425D4639}") = "Echoes", "Echoes.elements", "{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|AnyCPU = Debug|AnyCPU
+		Release|AnyCPU = Release|AnyCPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}.Debug|Any CPU.ActiveCfg = Debug
-		{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}.Debug|Any CPU.Build.0 = Debug
-		{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}.Release|Any CPU.ActiveCfg = Release
-		{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}.Release|Any CPU.Build.0 = Release
+		{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}.Debug|AnyCPU.ActiveCfg = Debug|AnyCPU
+		{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}.Debug|AnyCPU.Build.0 = Debug|AnyCPU
+		{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}.Release|AnyCPU.ActiveCfg = Release|AnyCPU
+		{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}.Release|AnyCPU.Build.0 = Release|AnyCPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

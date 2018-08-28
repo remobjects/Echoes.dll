@@ -68,16 +68,46 @@
     <RequireExplicitLocalInitialization>False</RequireExplicitLocalInitialization>
     <FutureHelperClassName />
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Target)' == 'Echoes.Full' ">
+    <Mode>Echoes</Mode>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <DefaultUses>System.Linq;System.Net;System.Xml.Linq</DefaultUses>
+    <OutputType>Library</OutputType>
+    <Enabled>True</Enabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Target)' == 'Echoes.Standard' ">
+    <Mode>Echoes</Mode>
+    <TargetFramework>.NETStandard2.0</TargetFramework>
+    <DefaultUses>System.Linq;System.Net;System.Xml.Linq</DefaultUses>
+    <ConditionalDefines>NETSTANDARD</ConditionalDefines>
+    <OutputType>Library</OutputType>
+    <Enabled>True</Enabled>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    <Reference Include="mscorlib">
+      <Target>Echoes.Full</Target>
     </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
+    <Reference Include="System">
+      <Target>Echoes.Full</Target>
+    </Reference>
+    <Reference Include="System.Core">
+      <Target>Echoes.Full</Target>
+    </Reference>
+    <Reference Include="System.Data">
+      <Target>Echoes.Full</Target>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <Target>Echoes.Full</Target>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <Target>Echoes.Full</Target>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Target>Echoes.Full</Target>
+    </Reference>
+    <NuGetReference Include="NETStandard.Library:2.0.0">
+      <Target>Echoes.Standard</Target>
+    </NuGetReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Globals.pas" />

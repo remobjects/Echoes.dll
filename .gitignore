@@ -1,4 +1,6 @@
 *.user
+*.cache
 [Bb]in
 [Dd]ebug*/
 obj/
+
