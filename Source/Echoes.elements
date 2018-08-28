@@ -86,6 +86,7 @@
     <Compile Include="OxygeneConversionBinder.pas" />
     <Compile Include="OxygeneInvokeMemberBinder.pas" />
     <Compile Include="OxygeneUnaryBinder.pas" />
+    <Compile Include="GenericNullable.pas"/>
     <Compile Include="Properties\AssemblyInfo.pas" />
     <Compile Include="Set.pas" />
     <EmbeddedResource Include="Properties\Resources.resx">
