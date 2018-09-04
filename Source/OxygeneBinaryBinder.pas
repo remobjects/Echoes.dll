@@ -175,8 +175,8 @@ end;
 
 method OxygeneBinaryBinder.GetBestType(aLeft, aRight: &Type): &Type;
 begin
-  if aLeft.IsAssignableFrom(aRight) then exit aRight;
-  if aRight.IsAssignableFrom(aLeft) then exit aLeft;
+  if aLeft.IsAssignableFrom(aRight) then exit aLeft;
+  if aRight.IsAssignableFrom(aLeft) then exit aRight;
 
   var n1, n2: Integer;
   var lUnassigned: Boolean := false;
