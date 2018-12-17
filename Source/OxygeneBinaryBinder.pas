@@ -125,9 +125,9 @@ begin
     if lWorkType = nil then lWorkType := lResType;
     var lRightExpr := arg.Expression;
     if lLeftExpr.Type <> lWorkType then
-      lLeftExpr := OxygeneBinder.IntConvert(lLeftExpr, lLeft, lWorkType);
+      lLeftExpr := OxygeneBinder.IntConvert(lLeftExpr, lLeft, lWorkType, true);
     if lRightExpr.Type <> lWorkType then
-      lRightExpr := OxygeneBinder.IntConvert(lRightExpr, lRight, lWorkType);
+      lRightExpr := OxygeneBinder.IntConvert(lRightExpr, lRight, lWorkType, true);
     case Operation of
       ExpressionType.Add,
       ExpressionType.AddChecked:

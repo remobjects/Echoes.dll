@@ -23,7 +23,7 @@ implementation
 method OxygeneConversionBinder.FallbackConvert(target: DynamicMetaObject; errorSuggestion: DynamicMetaObject): DynamicMetaObject;
 begin
   try
-    exit new DynamicMetaObject(OxygeneBinder.IntConvert(target.Expression, target.LimitType, self.Type),
+    exit new DynamicMetaObject(OxygeneBinder.IntConvert(target.Expression, target.LimitType, self.Type, false),
       OxygeneBinder.Restrict(nil, target));
   except
     on e: Exception do begin

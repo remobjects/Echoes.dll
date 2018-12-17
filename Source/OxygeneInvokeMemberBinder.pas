@@ -112,7 +112,7 @@ begin
          if OxygeneBinderFlags.GetMember in fFlags then
            lExpr := Expression.Field(nil, lField)
          else
-           lExpr := Expression.Assign(Expression.Field(nil, lField),  OxygeneBinder.IntConvert(args[0].Expression, args[0].LimitType, lField.FieldType));
+           lExpr := Expression.Assign(Expression.Field(nil, lField),  OxygeneBinder.IntConvert(args[0].Expression, args[0].LimitType, lField.FieldType, true));
         if (lExpr.Type.IsValueType)  then
           lExpr := Expression.Convert(lExpr, typeOf(Object));
         exit new DynamicMetaObject(lExpr, lRestrict);
@@ -161,7 +161,7 @@ begin
          if OxygeneBinderFlags.GetMember in fFlags then
            lExpr := Expression.Field(Expression.Convert(target.Expression, target.LimitType), lField)
          else
-           lExpr := Expression.Assign(Expression.Field(Expression.Convert(target.Expression, target.LimitType), lField),  OxygeneBinder.IntConvert(args[0].Expression, args[0].LimitType, lField.FieldType));
+           lExpr := Expression.Assign(Expression.Field(Expression.Convert(target.Expression, target.LimitType), lField),  OxygeneBinder.IntConvert(args[0].Expression, args[0].LimitType, lField.FieldType, true));
         if (lExpr.Type.IsValueType)  then
           lExpr := Expression.Convert(lExpr, typeOf(Object));
         exit new DynamicMetaObject(lExpr, lRestrict);
@@ -377,11 +377,11 @@ begin
   for i: Integer := 0 to args.Length -1 do begin
     var lExpr := args[i].Expression;
     if (lParamsParameterOffset[lResNo] <> -1) and (i >= lParamsParameterOffset[lResNo]) then begin
-      lExpr := OxygeneBinder.IntConvert(lExpr, args[i].LimitType, lPars[lPars.Length-1].ParameterType.GetElementType);
+      lExpr := OxygeneBinder.IntConvert(lExpr, args[i].LimitType, lPars[lPars.Length-1].ParameterType.GetElementType, true);
       if lArrayParams = nil then lArrayParams := new List<Expression>;
       lArrayParams.Add(lExpr);
     end else begin
-      lExpr := OxygeneBinder.IntConvert(lExpr, args[i].LimitType, lPars[lCurrOffsets[i]].ParameterType);
+      lExpr := OxygeneBinder.IntConvert(lExpr, args[i].LimitType, lPars[lCurrOffsets[i]].ParameterType, true);
       lRes[lCurrOffsets[i]] := lExpr;
     end;
   end;
@@ -791,7 +791,7 @@ begin
     var lField := lType.GetField(Name, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
     if (lField <> nil) then begin
       var lExpr: Expression;
-      lExpr := Expression.Assign(Expression.Field(nil, lField),  OxygeneBinder.IntConvert(value.Expression, value.LimitType, lField.FieldType));
+      lExpr := Expression.Assign(Expression.Field(nil, lField),  OxygeneBinder.IntConvert(value.Expression, value.LimitType, lField.FieldType, true));
       if (lExpr.Type.IsValueType)  then
         lExpr := Expression.Convert(lExpr, typeOf(Object));
       exit new DynamicMetaObject(lExpr, lRestrict);
@@ -812,7 +812,7 @@ begin
     var lField := lType.GetField(Name, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
     if lField = nil then lField := lType.GetField(Name, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
     if assigned(lField) then begin
-      var lExpr: Expression := Expression.Assign(Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField),  OxygeneBinder.IntConvert(value.Expression, value.LimitType, lField.FieldType));
+      var lExpr: Expression := Expression.Assign(Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField),  OxygeneBinder.IntConvert(value.Expression, value.LimitType, lField.FieldType, true));
       if (lExpr.Type.IsValueType)  then
         lExpr := Expression.Convert(lExpr, typeOf(Object));
       exit new DynamicMetaObject(lExpr, lRestrict);
@@ -935,7 +935,7 @@ begin
     var lExpr: Expression := Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField);
     if (lField.FieldType.IsArray) then begin
       lExpr := Expression.ArrayAccess(lExpr, indexes.Select(i->i.Expression));
-      lExpr := Expression.Assign(lExpr, OxygeneBinder.IntConvert(value.Expression, value.LimitType, lFieldEntryType));
+      lExpr := Expression.Assign(lExpr, OxygeneBinder.IntConvert(value.Expression, value.LimitType, lFieldEntryType, true));
     end else begin
       var lDefault := array of DefaultMemberAttribute(lField.FieldType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;
       if lDefault = nil then

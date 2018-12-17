@@ -40,7 +40,7 @@ type
   OxygeneBinder = public static class
   assembly
     class method Restrict(aPrev: BindingRestrictions; aNew: DynamicMetaObject): BindingRestrictions;
-    class method IntConvert(aExpr: Expression; aCurrType, aType: &Type): Expression;
+    class method IntConvert(aExpr: Expression; aCurrType, aType: &Type; aCheckCast: Boolean): Expression;
   public
     class method BinaryOperation(aFlags: OxygeneBinderFlags; aOperator: ExpressionType; aArg1, aArg2: OxygeneArgument): CallSiteBinder;
     class method UnaryOperation(aflags: OxygeneBinderFlags; aOperator: ExpressionType; aArg: OxygeneArgument): CallSiteBinder;
@@ -103,7 +103,7 @@ begin
   );
 end;
 
-class method OxygeneBinder.IntConvert(aExpr: Expression; aCurrType, aType: &Type): Expression;
+class method OxygeneBinder.IntConvert(aExpr: Expression; aCurrType, aType: &Type; aCheckCast: Boolean): Expression;
 begin
   if aCurrType = typeOf(Object) then exit Expression.Convert(Expression.Convert(aExpr, aCurrType), aType);
   if (aCurrType = typeOf(String)) and (&Type.GetTypeCode(aType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
@@ -114,8 +114,11 @@ begin
       exit Expression.New(typeOf(String).GetConstructor([typeOf(Char), typeOf(Integer)]), Expression.Convert(aExpr, typeOf(Char)), Expression.Constant(1))
     else
       exit Expression.Call(aExpr, typeOf(Object).GetMethod('ToString', []));
-  end else 
+  end else begin
+    if aCheckCast then 
     exit Expression.Convert(Expression.Convert(aExpr, aCurrType), iif(aType.IsByRef, aType.GetElementType(), aType));
+      exit Expression.TypeAs(Expression.Convert(aExpr, aCurrType), iif(aType.IsByRef, aType.GetElementType(), aType));
+  end;
 end;
 
 constructor OxygeneArgument(aMode: OxygeneArgumentMode);
