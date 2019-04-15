@@ -115,7 +115,10 @@ begin
     else
       exit Expression.Call(aExpr, typeOf(Object).GetMethod('ToString', []));
   end else begin
-    if aCheckCast then 
+    if aCheckCast or (&Type.GetTypeCode(aType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
+    TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Double, TypeCode.Single, TypeCode.Decimal]) or 
+     (&Type.GetTypeCode(aCurrType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
+    TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Double, TypeCode.Single, TypeCode.Decimal]) then 
     exit Expression.Convert(Expression.Convert(aExpr, aCurrType), iif(aType.IsByRef, aType.GetElementType(), aType));
       exit Expression.TypeAs(Expression.Convert(aExpr, aCurrType), iif(aType.IsByRef, aType.GetElementType(), aType));
   end;
