@@ -3,20 +3,12 @@
   <PropertyGroup>
     <ProductVersion>3.5</ProductVersion>
     <RootNamespace>RemObjects.Oxygene.Dynamic</RootNamespace>
-    <StartupClass />
-    <OutputType>library</OutputType>
+    <OutputType>Library</OutputType>
     <AssemblyName>Echoes</AssemblyName>
     <AllowGlobals>False</AllowGlobals>
-    <AllowLegacyWith>False</AllowLegacyWith>
-    <AllowLegacyOutParams>False</AllowLegacyOutParams>
-    <AllowLegacyCreate>False</AllowLegacyCreate>
-    <AllowUnsafeCode>False</AllowUnsafeCode>
-    <ApplicationIcon />
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <Name>Echoes</Name>
-    <ProjectGuid>{7891b618-21d1-4ca9-a530-eec2d6afe15a}</ProjectGuid>
-    <Company />
+    <ProjectGuid>{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <Optimize>False</Optimize>
@@ -25,52 +17,35 @@
     <GeneratePDB>True</GeneratePDB>
     <GenerateMDB>True</GenerateMDB>
     <EnableAsserts>True</EnableAsserts>
-    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
     <CaptureConsoleOutput>False</CaptureConsoleOutput>
     <StartMode>Project</StartMode>
     <RegisterForComInterop>False</RegisterForComInterop>
     <CpuType>anycpu</CpuType>
     <RuntimeVersion>v25</RuntimeVersion>
-    <XmlDoc>False</XmlDoc>
-    <XmlDocWarningLevel>WarningOnPublicMembers</XmlDocWarningLevel>
     <EnableUnmanagedDebugging>False</EnableUnmanagedDebugging>
-    <SuppressWarnings />
     <CodeFlowAnalysis>True</CodeFlowAnalysis>
     <UseXmlDoc>False</UseXmlDoc>
-    <XmlDocAllMembers>False</XmlDocAllMembers>
-    <WarnOnCaseMismatch>False</WarnOnCaseMismatch>
     <RunCodeAnalysis>False</RunCodeAnalysis>
     <RequireExplicitLocalInitialization>False</RequireExplicitLocalInitialization>
-    <FutureHelperClassName />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <Optimize>True</Optimize>
     <OutputPath>..\..\bin</OutputPath>
     <GeneratePDB>True</GeneratePDB>
     <GenerateMDB>True</GenerateMDB>
-    <EnableAsserts>False</EnableAsserts>
-    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
     <CaptureConsoleOutput>False</CaptureConsoleOutput>
     <StartMode>Project</StartMode>
     <RegisterForComInterop>False</RegisterForComInterop>
     <CpuType>anycpu</CpuType>
     <RuntimeVersion>v25</RuntimeVersion>
-    <XmlDoc>False</XmlDoc>
-    <XmlDocWarningLevel>WarningOnPublicMembers</XmlDocWarningLevel>
     <EnableUnmanagedDebugging>False</EnableUnmanagedDebugging>
-    <DefineConstants />
-    <SuppressWarnings />
     <CodeFlowAnalysis>True</CodeFlowAnalysis>
     <UseXmlDoc>False</UseXmlDoc>
-    <XmlDocAllMembers>False</XmlDocAllMembers>
-    <WarnOnCaseMismatch>False</WarnOnCaseMismatch>
     <RunCodeAnalysis>False</RunCodeAnalysis>
     <RequireExplicitLocalInitialization>False</RequireExplicitLocalInitialization>
-    <FutureHelperClassName />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Target)' == 'Echoes.Full' ">
     <Mode>Echoes</Mode>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFramework>.NETFramework4.0</TargetFramework>
     <DefaultUses>System.Linq;System.Net;System.Xml.Linq</DefaultUses>
     <OutputType>Library</OutputType>
     <Enabled>True</Enabled>
@@ -83,32 +58,7 @@
     <OutputType>Library</OutputType>
     <Enabled>True</Enabled>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="mscorlib">
-      <Target>Echoes.Full</Target>
-    </Reference>
-    <Reference Include="System">
-      <Target>Echoes.Full</Target>
-    </Reference>
-    <Reference Include="System.Core">
-      <Target>Echoes.Full</Target>
-    </Reference>
-    <Reference Include="System.Data">
-      <Target>Echoes.Full</Target>
-    </Reference>
-    <Reference Include="System.Drawing">
-      <Target>Echoes.Full</Target>
-    </Reference>
-    <Reference Include="System.Windows.Forms">
-      <Target>Echoes.Full</Target>
-    </Reference>
-    <Reference Include="System.Xml">
-      <Target>Echoes.Full</Target>
-    </Reference>
-    <NuGetReference Include="NETStandard.Library:2.0.0">
-      <Target>Echoes.Standard</Target>
-    </NuGetReference>
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Compile Include="Globals.pas" />
     <Compile Include="Binder.pas" />
@@ -131,6 +81,18 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Target)' == 'Echoes.Full'">
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Target)' == 'Echoes.Standard'">
+    <NuGetReference Include="NETStandard.Library:2.0.0" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Elements\RemObjects.Elements.Echoes.targets" />
   <PropertyGroup>
