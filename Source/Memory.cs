@@ -1,5 +1,6 @@
 ﻿namespace RemObjects.Elements.System
 {
+    #if !OLDCOMPILER
 	public struct Memory<T> {
 		private Object inst;
 		private IntPtr offset;
@@ -29,4 +30,5 @@
 		  }
 		}
 	}
+    #endif
 }
