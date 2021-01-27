@@ -9,6 +9,7 @@
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <Name>Echoes</Name>
     <ProjectGuid>{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}</ProjectGuid>
+    <AllowUnsafeCode>True</AllowUnsafeCode>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <Optimize>False</Optimize>
