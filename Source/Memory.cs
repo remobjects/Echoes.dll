@@ -1,6 +1,14 @@
 ﻿namespace RemObjects.Elements.System
 {
 	#if !OLDCOMPILER
+    public __extension class MemoryExtension<T>: Memory<T> {
+        public MemoryExtension(T value) 
+        {
+            var v = value;
+            return &v;
+        }
+    }
+    
 	public struct Memory<T> {
 		private Object inst;
 		private IntPtr offset;
@@ -10,7 +18,7 @@
 			this.inst = inst;
 			this.offset = offset;
 		}
-
+        
 		public unsafe ref T Ref() {
 			if (inst == null) {
 				return ref (*((T*)offset));
