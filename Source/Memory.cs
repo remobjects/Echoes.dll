@@ -1,6 +1,6 @@
 ﻿namespace RemObjects.Elements.System
 {
-    #if !OLDCOMPILER
+	#if !OLDCOMPILER
 	public struct Memory<T> {
 		private Object inst;
 		private IntPtr offset;
@@ -19,16 +19,21 @@
 			ref T res = (T*)(*((IntPtr*)(&inst)) + offset);
 			return ref res;
 		}
-		
+
 		public T Value {
 		  get {
-		    return Ref();
+			return Ref();
 		  }
 		  set {
-		    var x = ref Ref();
-		    x = value;
+			var x = ref Ref();
+			x = value;
 		  }
 		}
+
+		public static bool operator null (Memory<T> a)
+		{
+			return a.offset == 0 && a.inst == null;
+		}
 	}
-    #endif
+	#endif
 }
