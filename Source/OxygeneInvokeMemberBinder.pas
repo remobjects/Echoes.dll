@@ -457,7 +457,7 @@ begin
       lCurrentParam := lCurrentParam.GetElementType;
     if lBestParam.Equals(lCurrentParam) then        
       continue; // no point
-    if (((lBestParam <> nil) and (lCurrentParam <> nil)) and (
+    if (((lBestParam <> nil) and (lCurrentParam <> nil)) and not lCurrentParam.IsEnum and not lBestParam.IsEnum and (
       &Type.GetTypeCode(lBestParam) in [TypeCode.Single, TypeCode.Double, TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, TypeCode.Int32, TypeCode.UInt32, TypeCode.UInt64, TypeCode.Int64])
       and (&Type.GetTypeCode(lCurrentParam) in [TypeCode.Single, TypeCode.Double, TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, TypeCode.Int32, TypeCode.UInt32, TypeCode.UInt64, TypeCode.Int64])) then begin
       var lTmp: &Type := &Params[i].LimitType;
