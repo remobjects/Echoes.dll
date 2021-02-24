@@ -21,6 +21,9 @@
 		private Object inst;
 		private IntPtr offset;
 
+		public Object Inst { get { return inst; }}
+		public IntPtr Offset { get { return offset; }}
+
 		private static void CheckMemorySpace(Memory<T> a, Memory<T> b)
 		{
 			if (a.inst != b.inst) throw new MemoryException("Can not compare items in different memory space");
