@@ -78,7 +78,6 @@
     </None>
     <Compile Include="Properties\Settings.Designer.pas" />
     <Compile Include="MicroTasks.cs" />
-    <Compile Include="Memory.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
