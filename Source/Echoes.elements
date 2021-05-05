@@ -59,7 +59,6 @@
     <OutputType>Library</OutputType>
     <Enabled>True</Enabled>
   </PropertyGroup>
-  <ItemGroup />
   <ItemGroup>
     <Compile Include="Globals.pas" />
     <Compile Include="Binder.pas" />
@@ -79,6 +78,7 @@
     </None>
     <Compile Include="Properties\Settings.Designer.pas" />
     <Compile Include="MicroTasks.cs" />
+    <Compile Include="Memory.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
