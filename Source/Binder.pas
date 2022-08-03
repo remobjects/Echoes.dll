@@ -1,6 +1,7 @@
-﻿namespace RemObjects.Oxygene.Dynamic;
+﻿namespace RemObjects.Elements.Dynamic;
 
 interface
+
 uses
   System.Dynamic,
   System.Linq,
@@ -13,6 +14,7 @@ type
     IsVar = 1,
     IsOut = 2
   );
+
   OxygeneArgument = public class
   private
     fMode: OxygeneArgumentMode;
@@ -20,15 +22,18 @@ type
     constructor(aMode: OxygeneArgumentMode);
     property Mode: OxygeneArgumentMode read fMode;
   end;
+
   OxygeneBinderFlags = public flags (
     None = 0,
     ExplicitConversion = 1,
     StaticCall = 2,
-    GetMember = 4, 
+    GetMember = 4,
     SetMember = 8,
     OptCall = 16
   );
+
   OxygeneBinderException = public class(Exception);
+
   OxygeneAmbigiousOverloadException = public class(Exception)
   private
     fOverloads: Array of System.Reflection.MethodBase;
@@ -46,24 +51,24 @@ type
     class method UnaryOperation(aflags: OxygeneBinderFlags; aOperator: ExpressionType; aArg: OxygeneArgument): CallSiteBinder;
     class method Convert(aFlags: OxygeneBinderFlags; aTarget: &Type): CallSiteBinder;
     class method Invoke(aFlags: OxygeneBinderFlags; aArgs: array of OxygeneArgument): CallSiteBinder;
-    // calls, or finds field or property; 
+    // calls, or finds field or property;
     // name = null means default property (for get/set member)
     // name = null means ctor for staticcall without get/set
     // both instance and static call needs a "self" as the first parameter. (Static needs a System.Type instance)
-    class method InvokeMember(aFlags: OxygeneBinderFlags; aName: String; aTypeArgs: Array of &Type; 
+    class method InvokeMember(aFlags: OxygeneBinderFlags; aName: String; aTypeArgs: Array of &Type;
       aArgs: Array of OxygeneArgument): CallSiteBinder;
   end;
- 
+
 implementation
 
 class method OxygeneBinder.BinaryOperation(aFlags: OxygeneBinderFlags; aOperator: ExpressionType; aArg1, aArg2: OxygeneArgument): CallSiteBinder;
 begin
-  exit new OxygeneBinaryBinder(aOperator);  
+  exit new OxygeneBinaryBinder(aOperator);
 end;
 
 class method OxygeneBinder.UnaryOperation(aflags: OxygeneBinderFlags; aOperator: ExpressionType; aArg: OxygeneArgument): CallSiteBinder;
 begin
-  exit new OxygeneUnaryBinder(aOperator);  
+  exit new OxygeneUnaryBinder(aOperator);
 end;
 
 class method OxygeneBinder.Convert(aFlags: OxygeneBinderFlags; aTarget: &Type): CallSiteBinder;
@@ -106,19 +111,19 @@ end;
 class method OxygeneBinder.IntConvert(aExpr: Expression; aCurrType, aType: &Type; aCheckCast: Boolean): Expression;
 begin
   if aCurrType = typeOf(Object) then exit Expression.Convert(Expression.Convert(aExpr, aCurrType), aType);
-  if (aCurrType = typeOf(String)) and (&Type.GetTypeCode(aType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
+  if (aCurrType = typeOf(String)) and (&Type.GetTypeCode(aType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16,
     TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Double, TypeCode.Single, TypeCode.Decimal]) then begin
     exit Expression.Call(aType.GetMethod('Parse', [typeOf(String)]), Expression.Convert(aExpr, typeOf(String)));
   end else if (aType = typeOf(String)) and (aCurrType <> aType) then begin
-    if aCurrType = typeOf(Char) then 
+    if aCurrType = typeOf(Char) then
       exit Expression.New(typeOf(String).GetConstructor([typeOf(Char), typeOf(Integer)]), Expression.Convert(aExpr, typeOf(Char)), Expression.Constant(1))
     else
       exit Expression.Call(aExpr, typeOf(Object).GetMethod('ToString', []));
   end else begin
-    if aCheckCast or (&Type.GetTypeCode(aType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
-    TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Double, TypeCode.Single, TypeCode.Decimal]) or 
-     (&Type.GetTypeCode(aCurrType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
-    TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Double, TypeCode.Single, TypeCode.Decimal]) then 
+    if aCheckCast or (&Type.GetTypeCode(aType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16,
+    TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Double, TypeCode.Single, TypeCode.Decimal]) or
+     (&Type.GetTypeCode(aCurrType) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16,
+    TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Double, TypeCode.Single, TypeCode.Decimal]) then
     exit Expression.Convert(Expression.Convert(aExpr, aCurrType), iif(aType.IsByRef, aType.GetElementType(), aType));
       exit Expression.TypeAs(Expression.Convert(aExpr, aCurrType), iif(aType.IsByRef, aType.GetElementType(), aType));
   end;
@@ -131,13 +136,13 @@ end;
 
 constructor OxygeneAmbigiousOverloadException(aOverloads: Array of System.Reflection.MethodBase);
 begin
-  inherited constructor(RemObjects.Oxygene.Dynamic.Properties.Resources.strAmbigiousOverloadStr);
+  inherited constructor(RemObjects.Elements.Dynamic.Properties.Resources.strAmbigiousOverloadStr);
   fOverloads := aOverloads;
 end;
 
 method OxygeneAmbigiousOverloadException.ToString: String;
 begin
-  exit String.Format(RemObjects.Oxygene.Dynamic.Properties.Resources.strAmbigiousOverload, String.Join(',', fOverloads.Select(a -> a.ToString).ToArray));
+  exit String.Format(RemObjects.Elements.Dynamic.Properties.Resources.strAmbigiousOverload, String.Join(',', fOverloads.Select(a -> a.ToString).ToArray));
 end;
 
 end.

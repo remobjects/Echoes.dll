@@ -1,15 +1,15 @@
-﻿namespace RemObjects.Oxygene.Dynamic;
+﻿namespace RemObjects.Elements.Dynamic;
 
 interface
 
 uses
-  RemObjects.Oxygene.Dynamic.Properties,
   System.Collections.Generic,
   System.Dynamic,
   System.Linq,
   System.Reflection,
   System.Linq.Expressions,
-  System.Text;
+  System.Text,
+  RemObjects.Elements.Dynamic.Properties;
 
 type
   OxygeneInvokeMemberBinder = public class(InvokeMemberBinder)
@@ -35,7 +35,7 @@ type
   protected
   public
     constructor(aFlags: OxygeneBinderFlags; aName: String; aCount: Integer; aTypeArgs: Array of &Type);
-    
+
     method FallbackInvokeMember(target: System.Dynamic.DynamicMetaObject; args: array of System.Dynamic.DynamicMetaObject; errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject; override;
     method FallbackInvoke(target: System.Dynamic.DynamicMetaObject; args: array of System.Dynamic.DynamicMetaObject; errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject; override;
   end;
@@ -107,7 +107,7 @@ begin
       end;
       var lField := lType.GetField(Name, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
       if (length(args) = iif(OxygeneBinderFlags.GetMember in fFlags, 0, 1)) and (lField <> nil) then begin
-        
+
         var lExpr: Expression;
          if OxygeneBinderFlags.GetMember in fFlags then
            lExpr := Expression.Field(nil, lField)
@@ -124,25 +124,25 @@ begin
         if lPos <> nil then lPos := lPos.Where(@EqualName).ToArray;
         if length(lPos) = 0 then exit Failure(target, args, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
         lPosibilities := new List<MethodBase>();
-        for each el in lPos do 
+        for each el in lPos do
           lPosibilities.Add(el);
       end;
 
       if lPosibilities = nil then
         exit Failure(target, args, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
-    end else 
+    end else
     if String.IsNullOrEmpty(fName) then begin
       var lPos := lType.GetConstructors(BindingFlags.Public or BindingFlags.Instance);
       if length(lPos) = 0 then exit Failure(target, args, errorSuggestion, Resources.strNoConstructors);
       lPosibilities := new List<MethodBase>();
-      for each el in lPos do 
+      for each el in lPos do
         lPosibilities.Add(el);
     end else begin
       var lPos := lType.GetMethods(BindingFlags.Public or BindingFlags.Static);
       if lPos <> nil then lPos := lPos.Where(@EqualName).ToArray;
       if length(lPos) = 0 then exit Failure(target, args, errorSuggestion, String.Format(Resources.strNoMethodsByThatName, fName, lType));
       lPosibilities := new List<MethodBase>();
-      for each el in lPos do 
+      for each el in lPos do
         lPosibilities.Add(el);
     end;
   end else begin
@@ -156,7 +156,7 @@ begin
 
       var lField := lType.GetField(Name, BindingFlags.Instance or BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
       if (length(args) = iif(OxygeneBinderFlags.GetMember in fFlags, 0, 1)) and (lField <> nil) then begin
-        
+
         var lExpr: Expression;
          if OxygeneBinderFlags.GetMember in fFlags then
            lExpr := Expression.Field(Expression.Convert(target.Expression, target.LimitType), lField)
@@ -173,7 +173,7 @@ begin
         if lPos <> nil then lPos := lPos.Where(@EqualName).ToArray;
         if length(lPos) = 0 then exit Failure(target, args, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
         lPosibilities := new List<MethodBase>();
-        for each el in lPos do 
+        for each el in lPos do
           lPosibilities.Add(el);
       end;
       if lPosibilities = nil then
@@ -182,22 +182,22 @@ begin
       if String.IsNullOrEmpty(fName) then begin
         if typeOf(&Delegate).IsAssignableFrom(lType) then
           fName := 'Invoke'
-        else 
+        else
           raise new OxygeneBinderException(String.Format(Resources.strCannotInvokeNonDelegate, lType));
       end;
       var lPos := lType.GetMethods(BindingFlags.Public or BindingFlags.NonPublic or BindingFlags.Instance or BindingFlags.Static);
       if lPos <> nil then lPos := lPos.Where(@EqualName).ToArray;
-      if length(lPos) = 0 then begin 
+      if length(lPos) = 0 then begin
         if OxygeneBinderFlags.OptCall in fFlags then
           exit new DynamicMetaObject(Expression.Constant(nil, typeOf(Object)), lRestrict);
         exit Failure(target, args, errorSuggestion, String.Format(Resources.strNoMethodsByThatName, fName, lType));
       end;
         lPosibilities := new List<MethodBase>();
-        for each el in lPos do 
+        for each el in lPos do
           lPosibilities.Add(el);
     end;
   end;
-  // calls, or finds field or property; 
+  // calls, or finds field or property;
   // name = null means default property (for get/set member)
   // name = null means ctor for staticcall without get/set
   // both instance and static call needs a "self" as the first parameter. (Static needs a System.Type instance)
@@ -252,7 +252,7 @@ begin
   var lRestrict := OxygeneBinder.Restrict(nil, target);
   for i: Integer := 0 to length(args) -1 do
     lRestrict := OxygeneBinder.Restrict(lRestrict, args[i]);
-  exit new DynamicMetaObject(coalesce(errorSuggestion:Expression, 
+  exit new DynamicMetaObject(coalesce(errorSuggestion:Expression,
     Expression.Block(
         Expression.Throw(Expression.New(typeOf(OxygeneBinderException).GetConstructor([typeOf(String)]), Expression.Constant(msg))),
         Expression.Constant(nil, typeOf(Object)))), lRestrict);
@@ -287,7 +287,7 @@ begin
     if (lCount = 0) or (length(lPars[lCount-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) = 0) then begin
       if (args.Length < lCount - lDef) or (args.Length > lCount) then continue;
       lHasParamsArray := false;
-    end else 
+    end else
      lHasParamsArray := true;
     lCurrOffsets := new Integer[args.Length];
     var lCurrParO := 0;
@@ -346,7 +346,7 @@ begin
             aPosibilities[lResNo], lOffsets[lResNo], lParamsParameterOffset[lResNo],
             aPosibilities[i], lOffsets[i], lParamsParameterOffset[i]) then lResNo := i;
   end;
-  // 
+  //
   // We have found a best match, however we need to makes sure it's better than all the rest
   //
   var lAmbig: List<MethodBase> := nil;
@@ -363,7 +363,7 @@ begin
     end;
   end;
   if lAmbig <> nil then begin
-    exit new Tuple<MethodBase,array of Expression,Expression>(nil, nil, 
+    exit new Tuple<MethodBase,array of Expression,Expression>(nil, nil,
       Expression.Block(
         Expression.Throw(Expression.New(typeOf(OxygeneAmbigiousOverloadException).GetConstructor([typeOf(array of MethodBase)]), Expression.Constant(lAmbig.ToArray))),
         Expression.Constant(nil, typeOf(Object))));
@@ -448,14 +448,14 @@ begin
   var lBestParams := aBest.GetParameters;
   var lCurrentParams := aCurrent.GetParameters;
 
-  for i: Integer := 0 to &Params.Count -1 do begin 
+  for i: Integer := 0 to &Params.Count -1 do begin
     var lBestParam: &Type := FixGen(aTypeArgs, lBestParams[aBestOffsets[i]].ParameterType);
-    if (aBestIsParams = aBestOffsets[i]) then        
+    if (aBestIsParams = aBestOffsets[i]) then
       lBestParam := lBestParam.GetElementType;
     var lCurrentParam: &Type := FixGen(aTypeArgs, lCurrentParams[aCurrentOffsets[i]].ParameterType);
-    if (aCurrentIsParams = aCurrentOffsets[i]) then        
+    if (aCurrentIsParams = aCurrentOffsets[i]) then
       lCurrentParam := lCurrentParam.GetElementType;
-    if lBestParam.Equals(lCurrentParam) then        
+    if lBestParam.Equals(lCurrentParam) then
       continue; // no point
     if (((lBestParam <> nil) and (lCurrentParam <> nil)) and not lCurrentParam.IsEnum and not lBestParam.IsEnum and (
       &Type.GetTypeCode(lBestParam) in [TypeCode.Single, TypeCode.Double, TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, TypeCode.Int32, TypeCode.UInt32, TypeCode.UInt64, TypeCode.Int64])
@@ -468,18 +468,18 @@ begin
         continue;
       end
     end;
-    case BetterConversionFromExpression(&Params[i], lBestParam, lCurrentParam) of 
+    case BetterConversionFromExpression(&Params[i], lBestParam, lCurrentParam) of
       1: exit false; // lBestParam is better than lCurrentParam; exit as it wouldn't mean lCurrentParam CAN be better than lBestParam
-      -1:  lAtLeastOneBetterConversion := true; // lCurrentParam is better than lBestParam 
+      -1:  lAtLeastOneBetterConversion := true; // lCurrentParam is better than lBestParam
       // case 0: they're equal in conversion
     end;
   end;
-  if lAtLeastOneBetterConversion then  
+  if lAtLeastOneBetterConversion then
     exit true;
   if (lHadNumberParameter) and (lDistBest <> lDistCurr) then begin
-    if lDistBest > lDistCurr then    
+    if lDistBest > lDistCurr then
       exit true
-    else    
+    else
       exit false
   end;
   // non-generic should be better than generic
@@ -502,14 +502,14 @@ begin
   if (not aBest.IsStatic) and (aCurrent.IsStatic) then  exit false;
 
   // now we got to use the original param types (ie not resolved) and check which parameter is more or less specific
-  for i: Integer := 0 to &Params.Count -1 do begin 
+  for i: Integer := 0 to &Params.Count -1 do begin
       var lBetterParam: &Type := lBestParams[aBestOffsets[i]].ParameterType;
       var lCurrentParam: &Type := lCurrentParams[aCurrentOffsets[i]].ParameterType;
 
-      case IsMoreSpecific(lBetterParam, lCurrentParam) of 
+      case IsMoreSpecific(lBetterParam, lCurrentParam) of
         1: exit false; // return false again as lBetterParam is more specific
         -1: lAtLeastOneBetterConversion := true; // there's at least 1 better conversion
-          
+
       end;
     end;
   result := lAtLeastOneBetterConversion;
@@ -531,7 +531,7 @@ begin
     TypeCode.UInt16: begin n1 := 2;lUnassigned1 := true; end;
     TypeCode.UInt32: begin n1 := 3;lUnassigned1 := true; end;
     TypeCode.UInt64: begin n1 := 4; lUnassigned1 := true; end;
-  else 
+  else
     exit 1000;
   end; // case
   case &Type.GetTypeCode(aSrc) of
@@ -545,9 +545,9 @@ begin
     TypeCode.UInt16: begin n2 := 2;lUnassigned2 := true; end;
     TypeCode.UInt32: begin n2 := 3;lUnassigned2 := true; end;
     TypeCode.UInt64: begin n2 := 4; lUnassigned2 := true; end;
-  else 
+  else
     exit 1000;
-  end; 
+  end;
   var lOrd := n1 - n2;
   if lOrd < 0 then lOrd := -lOrd + 4;
   if lUnassigned1 <> lUnassigned2 then lOrd := lOrd + 4;
@@ -621,7 +621,7 @@ begin
     if length(lBestArgs) = length(lCurrentArgs)  then begin
       var lMoreSpecific: System.Int32 := 0;
       for I: Integer := length(lBestArgs) -1 downto 0 do begin
-        case IsMoreSpecific(lBestArgs[I], lCurrentArgs[I]) of 
+        case IsMoreSpecific(lBestArgs[I], lCurrentArgs[I]) of
           1:  if lMoreSpecific >= 0 then lMoreSpecific := 1 else exit 0;
          -1:  if lMoreSpecific <= 0 then lMoreSpecific := -1 else exit 0;
         end;
@@ -629,7 +629,7 @@ begin
       end;
     end;
   end;
-  if lBestParam.IsArray and lCurrentParam.IsArray then 
+  if lBestParam.IsArray and lCurrentParam.IsArray then
     exit IsMoreSpecific(lBestParam.GetElementType, lCurrentParam.GetElementType);
   exit 0;
 end;
@@ -702,7 +702,7 @@ begin
     end;
     var lField := lType.GetField(Name, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
     if (lField <> nil) then begin
-        
+
       var lExpr: Expression;
       lExpr := Expression.Field(nil, lField);
       if (lExpr.Type.IsValueType)  then
@@ -716,7 +716,7 @@ begin
       if lPos <> nil then lPos := lPos.Where(a->fName = a.Name).ToArray;
       if length(lPos) = 0 then exit OxygeneInvokeMemberBinder.Failure(target, nil, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
       lPosibilities := new List<MethodBase>();
-      for each el in lPos do 
+      for each el in lPos do
         lPosibilities.Add(el);
     end;
 
@@ -748,13 +748,13 @@ begin
       if lPos <> nil then lPos := lPos.Where(a->a.Name.ToUpper = fName.ToUpper).ToArray;
       if length(lPos) = 0 then exit OxygeneInvokeMemberBinder.Failure(target, nil, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
       lPosibilities := new List<MethodBase>();
-      for each el in lPos do 
+      for each el in lPos do
         lPosibilities.Add(el);
     end;
     if lPosibilities = nil then
       exit OxygeneInvokeMemberBinder.Failure(target, nil, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
   end;
-  // calls, or finds field or property; 
+  // calls, or finds field or property;
   // name = null means default property (for get/set member)
   // name = null means ctor for staticcall without get/set
   // both instance and static call needs a "self" as the first parameter. (Static needs a System.Type instance)
@@ -823,7 +823,7 @@ begin
     if lPosibilities = nil then
       exit OxygeneInvokeMemberBinder.Failure(target, [value], errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
   end;
-  // calls, or finds field or property; 
+  // calls, or finds field or property;
   // name = null means default property (for get/set member)
   // name = null means ctor for staticcall without get/set
   // both instance and static call needs a "self" as the first parameter. (Static needs a System.Type instance)

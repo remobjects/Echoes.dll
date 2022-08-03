@@ -1,9 +1,8 @@
-﻿namespace RemObjects.Oxygene.Dynamic;
+﻿namespace RemObjects.Elements.Dynamic;
 
 interface
 
 uses
-  RemObjects.Oxygene.Dynamic.Properties,
   System.Collections.Generic,
   System.Dynamic,
   System.Linq,

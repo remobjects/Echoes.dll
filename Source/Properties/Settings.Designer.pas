@@ -1,4 +1,4 @@
-﻿namespace RemObjects.Oxygene.Dynamic;
+﻿namespace RemObjects.Elements.Dynamic;
 
 interface
 

@@ -1,14 +1,14 @@
-﻿namespace RemObjects.Oxygene.Dynamic;
+﻿namespace RemObjects.Elements.Dynamic;
 
 interface
 
 uses
-  RemObjects.Oxygene.Dynamic.Properties,
   System.Collections.Generic,
   System.Dynamic,
   System.Linq,
   System.Linq.Expressions,
-  System.Text;
+  System.Text,
+  RemObjects.Elements.Dynamic.Properties;
 
 type
   OxygeneBinaryBinder = public class(BinaryOperationBinder)
@@ -23,8 +23,8 @@ type
 implementation
 
 method OxygeneBinaryBinder.FallbackBinaryOperation(
-  target: DynamicMetaObject; 
-  arg: DynamicMetaObject; 
+  target: DynamicMetaObject;
+  arg: DynamicMetaObject;
   errorSuggestion: DynamicMetaObject): DynamicMetaObject;
 begin
   var lLeftExpr := target.Expression;
@@ -33,19 +33,19 @@ begin
     var lRight := arg.LimitType;
     var lResType: &Type;
     var lWorkType: &Type := nil;
-  
+
     case Operation of
-      ExpressionType.TypeIs: 
+      ExpressionType.TypeIs:
         begin
           if arg.Value is &Type then begin
-            exit new DynamicMetaObject(Expression.TypeIs(target.Expression, &Type(arg.Value)), 
+            exit new DynamicMetaObject(Expression.TypeIs(target.Expression, &Type(arg.Value)),
               OxygeneBinder.Restrict(nil, target).Merge(BindingRestrictions.GetInstanceRestriction(arg.Expression, arg.Value)));
-          end else 
-            raise new OxygeneBinderException(Resources.strInvalidOperator); 
+          end else
+            raise new OxygeneBinderException(Resources.strInvalidOperator);
         end;
       ExpressionType.Add,
-      ExpressionType.AddChecked: 
-            if ((lLeft = typeOf(String)) or (lLeft = typeOf(Char))) and 
+      ExpressionType.AddChecked:
+            if ((lLeft = typeOf(String)) or (lLeft = typeOf(Char))) and
               ((lRight = typeOf(String)) or (lRight = typeOf(Char))) then
               lResType := typeOf(String)
             else if (lLeft = typeOf(String)) or
@@ -54,7 +54,7 @@ begin
             else
               lResType := GetBestType(lLeft, lRight);
       ExpressionType.GreaterThan,
-      ExpressionType.GreaterThanOrEqual, 
+      ExpressionType.GreaterThanOrEqual,
       ExpressionType.LessThan,
       ExpressionType.LessThanOrEqual,
       ExpressionType.NotEqual,
@@ -66,18 +66,18 @@ begin
       ExpressionType.LeftShift,
       ExpressionType.RightShift:
         begin
-          if (&Type.GetTypeCode(lLeft) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
-            TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64]) and 
-              (&Type.GetTypeCode(lRight) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
+          if (&Type.GetTypeCode(lLeft) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16,
+            TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64]) and
+              (&Type.GetTypeCode(lRight) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16,
             TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64]) then
             lResType := lLeft
           else
             exit new DynamicMetaObject(
-              coalesce(errorSuggestion:Expression, 
+              coalesce(errorSuggestion:Expression,
               Expression.Block(
               Expression.Throw(Expression.New(typeOf(OxygeneBinderException).GetConstructor([typeOf(String)]), Expression.Constant(Resources.strInvalidOperands))),
               Expression.Constant(nil, typeOf(Object))))
-          
+
             , OxygeneBinder.Restrict(OxygeneBinder.Restrict(nil, target), arg));
         end;
       ExpressionType.And,
@@ -86,9 +86,9 @@ begin
       ExpressionType.Or,
       ExpressionType.OrElse:
         begin
-          if (&Type.GetTypeCode(lLeft) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
-            TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Boolean]) and 
-              (&Type.GetTypeCode(lRight) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16, 
+          if (&Type.GetTypeCode(lLeft) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16,
+            TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Boolean]) and
+              (&Type.GetTypeCode(lRight) in [TypeCode.Byte, TypeCode.SByte, TypeCode.Int16, TypeCode.UInt16,
             TypeCode.Int32, TypeCode.UInt32,  TypeCode.Int64, TypeCode.UInt64, TypeCode.Boolean]) then
             lResType := lLeft
           else
@@ -96,7 +96,7 @@ begin
               coalesce(errorSuggestion:Expression,Expression.Block(
               Expression.Throw(Expression.New(typeOf(OxygeneBinderException).GetConstructor([typeOf(String)]), Expression.Constant(Resources.strInvalidOperands))),
               Expression.Constant(nil, typeOf(Object))))
-          
+
             , OxygeneBinder.Restrict(OxygeneBinder.Restrict(nil, target), arg));
         end;
       ExpressionType.Divide,
@@ -110,7 +110,7 @@ begin
         coalesce(errorSuggestion:Expression, Expression.Block(
         Expression.Throw(Expression.New(typeOf(OxygeneBinderException).GetConstructor([typeOf(String)]), Expression.Constant(Resources.strInvalidOperator))),
         Expression.Constant(nil, typeOf(Object))))
-          
+
       , OxygeneBinder.Restrict(OxygeneBinder.Restrict(nil, target), arg));
     end; // case
     if lResType = nil then begin
@@ -118,7 +118,7 @@ begin
         coalesce(errorSuggestion:Expression, Expression.Block(
         Expression.Throw(Expression.New(typeOf(OxygeneBinderException).GetConstructor([typeOf(String)]), Expression.Constant(Resources.strInvalidOperands))),
         Expression.Constant(nil, typeOf(Object))))
-          
+
       , OxygeneBinder.Restrict(OxygeneBinder.Restrict(nil, target), arg));
     end;
 
@@ -131,7 +131,7 @@ begin
     case Operation of
       ExpressionType.Add,
       ExpressionType.AddChecked:
-        if lWorkType = typeOf(String) then 
+        if lWorkType = typeOf(String) then
           lLeftExpr := Expression.Call(typeOf(String).GetMethod('Concat', [typeOf(String), typeOf(String)]), lLeftExpr, lRightExpr)
         else
           lLeftExpr := Expression.Add(lLeftExpr, lRightExpr);
@@ -159,7 +159,7 @@ begin
         coalesce(errorSuggestion:Expression, Expression.Block(
         Expression.Throw(Expression.New(typeOf(OxygeneBinderException).GetConstructor([typeOf(String)]), Expression.Constant(Resources.strInvalidOperator))),
         Expression.Constant(nil, typeOf(Object))))
-          
+
       , OxygeneBinder.Restrict(OxygeneBinder.Restrict(nil, target), arg));
     end; // case
   except
@@ -191,7 +191,7 @@ begin
     TypeCode.UInt16: begin n1 := 2;lUnassigned := true; end;
     TypeCode.UInt32: begin n1 := 3;lUnassigned := true; end;
     TypeCode.UInt64: begin n1 := 4; lUnassigned := true; end;
-  else 
+  else
     if OxygeneInvokeMemberBinder.GetImplicitOperator(aRight, aLeft) <> nil then exit aLeft;
     if OxygeneInvokeMemberBinder.GetImplicitOperator(aLeft, aRight) <> nil then exit aRight;
     exit nil;
@@ -207,9 +207,9 @@ begin
     TypeCode.UInt16: n2 := 2;
     TypeCode.UInt32: n2 := 3;
     TypeCode.UInt64: n2 := 4;
-  else 
+  else
     exit nil;
-  end; 
+  end;
   case (if n1 > n2 then n1 else n2) of
     1: if lUnassigned then exit typeOf(Byte) else exit typeOf(SByte);
     2: if lUnassigned then exit typeOf(UInt16) else exit typeOf(Int16);

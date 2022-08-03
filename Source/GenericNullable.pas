@@ -1,19 +1,21 @@
 ﻿namespace RemObjects.Elements.System;
 
-
 type
   [TransparentType]
   GenericNullable<T> = public record
   private
+
     method get_Value: T;
     begin
       if fHasValue then exit fValue;
       raise new NullReferenceException('Nullable value is nil');
     end;
+
     fHasValue: Boolean;
     fValue: T;
-    
+
     class var fIsReference: Boolean := Object.ReferenceEquals(default(T), nil);
+
   public
     constructor(aValue: T);
     begin
@@ -60,7 +62,7 @@ type
 
     class operator implicit(aVal: GenericNullable<T>): T;
     begin
-      if fIsReference then 
+      if fIsReference then
         exit aVal.GetValueOrDefault;
       exit aVal.Value;
     end;
@@ -73,8 +75,8 @@ type
     end;
 
     class operator Equal(aLeft, aRight: GenericNullable<T>): Boolean;
-    begin 
-      if aLeft.fHasValue = aRight.fHasValue then begin 
+    begin
+      if aLeft.fHasValue = aRight.fHasValue then begin
         if not aLeft.fHasValue then exit true;
         exit aLeft.fValue.Equals(aRight.fValue);
       end;
@@ -82,9 +84,10 @@ type
     end;
 
     class operator NotEqual(aLeft, aRight: GenericNullable<T>): Boolean;
-    begin 
+    begin
       exit not (aLeft = aRight);
     end;
+
   end;
 
 end.

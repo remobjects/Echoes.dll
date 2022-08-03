@@ -1,14 +1,14 @@
-﻿namespace RemObjects.Oxygene.Dynamic;
+﻿namespace RemObjects.Elements.Dynamic;
 
 interface
 
 uses
-  RemObjects.Oxygene.Dynamic.Properties,
   System.Collections.Generic,
   System.Dynamic,
   System.Linq,
   System.Linq.Expressions,
-  System.Text;
+  System.Text,
+  RemObjects.Elements.Dynamic.Properties;
 
 type
   OxygeneUnaryBinder = public class(UnaryOperationBinder)
