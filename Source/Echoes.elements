@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="Globals.pas" />
     <Compile Include="Binder.pas" />
+    <Compile Include="Memory.cs" />
     <Compile Include="OxygeneBinaryBinder.pas" />
     <Compile Include="OxygeneConversionBinder.pas" />
     <Compile Include="OxygeneInvokeMemberBinder.pas" />
