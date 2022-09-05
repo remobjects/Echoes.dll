@@ -10,10 +10,11 @@
     <Name>Echoes</Name>
     <ProjectGuid>{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}</ProjectGuid>
     <AllowUnsafeCode>True</AllowUnsafeCode>
+    <OutputPathUsesSDKNames>True</OutputPathUsesSDKNames>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <Optimize>False</Optimize>
-    <OutputPath>..\..\bin</OutputPath>
+    <OutputPath>..\Bin</OutputPath>
     <DefineConstants>DEBUG;TRACE;</DefineConstants>
     <GeneratePDB>True</GeneratePDB>
     <GenerateMDB>True</GenerateMDB>
@@ -30,7 +31,7 @@
     <RequireExplicitLocalInitialization>False</RequireExplicitLocalInitialization>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <OutputPath>..\..\bin</OutputPath>
+    <OutputPath>..\Bin</OutputPath>
     <GeneratePDB>True</GeneratePDB>
     <GenerateMDB>True</GenerateMDB>
     <CaptureConsoleOutput>False</CaptureConsoleOutput>
@@ -48,6 +49,14 @@
     <Mode>Echoes</Mode>
     <TargetFramework>.NETFramework4.0</TargetFramework>
     <DefaultUses>System.Linq;System.Net;System.Xml.Linq</DefaultUses>
+    <OutputType>Library</OutputType>
+    <Enabled>True</Enabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Target)' == 'Echoes.Core' ">
+    <Mode>Echoes</Mode>
+    <TargetFramework>.NETCore3.0</TargetFramework>
+    <DefaultUses>System.Linq;System.Net;System.Xml.Linq</DefaultUses>
+    <ConditionalDefines>NETCORE</ConditionalDefines>
     <OutputType>Library</OutputType>
     <Enabled>True</Enabled>
   </PropertyGroup>
@@ -74,6 +83,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <Compile Include="MicroTasks.cs" />
+    <Compile Include="Range.pas" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
