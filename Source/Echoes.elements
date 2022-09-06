@@ -54,7 +54,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Target)' == 'Echoes.Core' ">
     <Mode>Echoes</Mode>
-    <TargetFramework>.NETCore3.0</TargetFramework>
+    <TargetFramework>.NETCore5.0</TargetFramework>
     <DefaultUses>System.Linq;System.Net;System.Xml.Linq</DefaultUses>
     <ConditionalDefines>NETCORE</ConditionalDefines>
     <OutputType>Library</OutputType>
