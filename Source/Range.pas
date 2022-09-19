@@ -153,6 +153,9 @@ type
     fEnd: &Index;
   end;
 
+{$ENDIF}
+
+type
   String_RangeExtensions = public extension class(String)
   public
     property Chars[aIndex: &Index]: Char read Chars[aIndex.GetOffset(Length)]; default; inline;
@@ -165,7 +168,5 @@ type
       result := Substring(lStart, lEnd-lStart) as not nullable;
     end;
   end;
-
-{$ENDIF}
 
 end.
