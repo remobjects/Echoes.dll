@@ -153,6 +153,19 @@ type
     fEnd: &Index;
   end;
 
+  String_RangeExtensions = public extension class(String)
+  public
+    property Chars[aIndex: &Index]: Char read Chars[aIndex.GetOffset(Length)]; default; inline;
+    property Chars[aRange: RemObjects.Elements.System.Range]: not nullable String read Substring(aRange); default; inline;
+
+    method Substring(aRange: RemObjects.Elements.System.Range): not nullable String; inline;
+    begin
+      var lStart := aRange.Start.GetOffset(Length);
+      var lEnd := aRange.End.GetOffset(Length);
+      result := Substring(lStart, lEnd-lStart) as not nullable;
+    end;
+  end;
+
 {$ENDIF}
 
 end.
