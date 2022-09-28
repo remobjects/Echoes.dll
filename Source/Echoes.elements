@@ -84,6 +84,7 @@
     </EmbeddedResource>
     <Compile Include="MicroTasks.cs" />
     <Compile Include="Range.pas" />
+    <Compile Include="ArrayUtils.pas" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

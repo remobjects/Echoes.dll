@@ -1,6 +1,6 @@
 ﻿namespace Remobjects.Elements.System;
 
-{$IF NETCORE}
+{$IF NETCOREAPP}
 type
   &Index = public System.Index;
   Range = public System.Range;
