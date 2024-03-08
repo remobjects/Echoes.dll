@@ -60,7 +60,7 @@ type
       exit new GenericNullable<T>(aVal as T);
     end;
 
-    class operator implicit(aVal: GenericNullable<T>): T;
+    {class operator implicit(aVal: GenericNullable<T>): T;
     begin
       if fIsReference then
         exit aVal.GetValueOrDefault;
@@ -72,7 +72,7 @@ type
       if aVal = nil then
         exit default(GenericNullable<T>);
       exit new GenericNullable<T>(aVal as T);
-    end;
+    end;}
 
     class operator Equal(aLeft, aRight: GenericNullable<T>): Boolean;
     begin
