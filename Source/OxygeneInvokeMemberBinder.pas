@@ -23,6 +23,8 @@ type
     class method Failure(target: DynamicMetaObject; args: array of DynamicMetaObject; errorSuggestion: DynamicMetaObject; msg: String): DynamicMetaObject;
     class method FindMatch(aTypeArgs: array of &Type; aPosibilities: List<MethodBase>; args: array of DynamicMetaObject): Tuple<MethodBase, array of Expression, Expression>;
     class method FixGen(aTypeArgs: array of &Type; aType: &Type): &Type;
+    class method InferTypeArguments(aParameter, anActual: &Type; aTypeArgs: array of &Type): Boolean;
+    class method CloseGenericMethod(aMethod: MethodInfo; aTypeArgs: array of &Type; args: array of DynamicMetaObject): MethodInfo;
     class method IsCompatibleParameterType(aSrc: &Type; aType: &Type): Boolean;
     class method GetImplicitOperator(aSrc, aDest: &Type): MethodInfo;
     class method BetterFunctionMember(aTypeArgs: array of &Type; &Params: array of DynamicMetaObject; aBest: MethodBase; aBestOffsets: array of Int32; aBestIsParams: Integer; aCurrent: MethodBase; aCurrentOffsets: array of Int32; aCurrentIsParams: Integer): Boolean;
@@ -91,10 +93,13 @@ end;
 
 method OxygeneInvokeMemberBinder.FallbackInvokeMember(target: System.Dynamic.DynamicMetaObject; args: array of System.Dynamic.DynamicMetaObject; errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject;
 begin
-  var lStatic := OxygeneBinderFlags.StaticCall in fFlags;
   fName := Name;
+  var lStatic := (OxygeneBinderFlags.StaticCall in fFlags) or
+    (String.IsNullOrEmpty(fName) and target.HasValue and (target.Value is &Type));
   var lPosibilities: List<MethodBase>;
-  var lRestrict := OxygeneBinder.Restrict(nil, target);
+  // A represented type is a value: different Type objects share RuntimeType.
+  var lRestrict := if lStatic then BindingRestrictions.GetInstanceRestriction(target.Expression, target.Value)
+    else OxygeneBinder.Restrict(nil, target);
   for i: Integer := 0 to length(args) -1 do
     lRestrict := OxygeneBinder.Restrict(lRestrict, args[i]);
   if lStatic then begin
@@ -259,6 +264,85 @@ begin
 end;
 
 
+// Recover method type arguments from runtime argument types before overload
+// matching, including nested containers and implemented generic interfaces.
+class method OxygeneInvokeMemberBinder.InferTypeArguments(aParameter, anActual: &Type; aTypeArgs: array of &Type): Boolean;
+begin
+  if not aParameter.ContainsGenericParameters then
+    exit true;
+  if aParameter.IsGenericParameter then begin
+    var lIndex := aParameter.GenericParameterPosition;
+    if assigned(aTypeArgs[lIndex]) then
+      exit aTypeArgs[lIndex] = anActual;
+    aTypeArgs[lIndex] := anActual;
+    exit true;
+  end;
+  if aParameter.IsByRef then
+    exit InferTypeArguments(aParameter.GetElementType, anActual, aTypeArgs);
+  if aParameter.IsArray then begin
+    if not anActual.IsArray or (aParameter.GetArrayRank <> anActual.GetArrayRank) then
+      exit false;
+    exit InferTypeArguments(aParameter.GetElementType, anActual.GetElementType, aTypeArgs);
+  end;
+  if not aParameter.IsGenericType then
+    exit false;
+  var lDefinition := aParameter.GetGenericTypeDefinition;
+  var lMatchingType := anActual;
+  while assigned(lMatchingType) and
+        (not lMatchingType.IsGenericType or (lMatchingType.GetGenericTypeDefinition <> lDefinition)) do
+    lMatchingType := lMatchingType.BaseType;
+  if not assigned(lMatchingType) then begin
+    var lInterfaces := anActual.GetInterfaces.Where(a -> a.IsGenericType and (a.GetGenericTypeDefinition = lDefinition)).ToArray;
+    // Multiple instantiations do not provide a unique inference.
+    if length(lInterfaces) <> 1 then
+      exit false;
+    lMatchingType := lInterfaces[0];
+  end;
+  var lParameters := aParameter.GetGenericArguments;
+  var lActuals := lMatchingType.GetGenericArguments;
+  for i: Integer := 0 to length(lParameters) - 1 do
+    if not InferTypeArguments(lParameters[i], lActuals[i], aTypeArgs) then
+      exit false;
+  exit true;
+end;
+
+class method OxygeneInvokeMemberBinder.CloseGenericMethod(aMethod: MethodInfo; aTypeArgs: array of &Type; args: array of DynamicMetaObject): MethodInfo;
+begin
+  if not aMethod.IsGenericMethodDefinition then
+    exit aMethod;
+  var lTypeArgs := aTypeArgs;
+  if length(lTypeArgs) = 0 then begin
+    lTypeArgs := new &Type[length(aMethod.GetGenericArguments)];
+    var lParameters := aMethod.GetParameters;
+    var lHasParams := (length(lParameters) > 0) and
+      (length(lParameters[length(lParameters) - 1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0);
+    for i: Integer := 0 to length(args) - 1 do begin
+      if args[i].HasValue and not assigned(args[i].Value) then
+        continue; // A null value cannot infer a type argument.
+      var lParameterIndex := i;
+      if lParameterIndex >= length(lParameters) then begin
+        if not lHasParams then
+          exit nil;
+        lParameterIndex := length(lParameters) - 1;
+      end;
+      var lParameter := lParameters[lParameterIndex].ParameterType;
+      if lHasParams and (lParameterIndex = length(lParameters) - 1) and
+         ((i >= length(lParameters)) or not args[i].LimitType.IsArray) then
+        lParameter := lParameter.GetElementType;
+      if not InferTypeArguments(lParameter, args[i].LimitType, lTypeArgs) then
+        exit nil;
+    end;
+    if lTypeArgs.Any(a -> not assigned(a)) then
+      exit nil;
+  end;
+  try
+    result := aMethod.MakeGenericMethod(lTypeArgs);
+  except
+    on ArgumentException do
+      exit nil; // Constraint violations make this candidate inapplicable.
+  end;
+end;
+
 class method OxygeneInvokeMemberBinder.FindMatch(aTypeArgs: array of &Type; aPosibilities: List<MethodBase>; args: array of DynamicMetaObject): Tuple<MethodBase, array of Expression, Expression>;
 begin
   // first; if we have GetPars; throw everything away that doesn't make sense.
@@ -267,6 +351,15 @@ begin
       if length(aPosibilities[i].GetGenericArguments) <> length(aTypeArgs) then begin
         aPosibilities.RemoveAt(i);
       end;
+    end;
+  end;
+  for i: Integer := aPosibilities.Count - 1 downto 0 do begin
+    if aPosibilities[i] is MethodInfo then begin
+      var lMethod := CloseGenericMethod(MethodInfo(aPosibilities[i]), aTypeArgs, args);
+      if assigned(lMethod) then
+        aPosibilities[i] := lMethod
+      else
+        aPosibilities.RemoveAt(i);
     end;
   end;
   var lOffsets: array of array of Integer := new array of Int32[aPosibilities.Count];
@@ -852,6 +945,12 @@ begin
   var lRestrict := OxygeneBinder.Restrict(nil, target);
   var lType := target.LimitType;
   if lStatic and (target.HasValue) and (target.Value is &Type) then lType := target.Value as &Type;
+
+  if not lStatic and String.IsNullOrEmpty(fName) then begin
+    var lTuple := TupleIndexBinding.Bind(target, indexes);
+    if assigned(lTuple) then
+      exit lTuple;
+  end;
 
   if String.IsNullOrEmpty(fName) then begin
     var lDefault := array of DefaultMemberAttribute(lType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;

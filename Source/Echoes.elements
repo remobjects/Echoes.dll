@@ -75,6 +75,8 @@
     <Compile Include="OxygeneBinaryBinder.pas" />
     <Compile Include="OxygeneConversionBinder.pas" />
     <Compile Include="OxygeneInvokeMemberBinder.pas" />
+    <Compile Include="TupleIndexBinding.pas" />
+    <Compile Include="DynamicTask.pas" />
     <Compile Include="OxygeneUnaryBinder.pas" />
     <Compile Include="GenericNullable.pas" />
     <Compile Include="Properties\AssemblyInfo.pas" />
