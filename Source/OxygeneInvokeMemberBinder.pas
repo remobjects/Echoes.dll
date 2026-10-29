@@ -482,22 +482,20 @@ begin
      lRes[lRes.Length-1] := Expression.NewArrayInit(lPars[lPars.Length-1].ParameterType.GetElementType, lArrayParams);
   end;
   for i: Integer := 0 to lRes.Length -1 do begin
-    if (lPars[i].IsOptional) then begin
-      if assigned(lPars[i].ParameterType.GetElementType()) then begin
-        {$IFDEF PCL}
-        lRes[i] := Expression.Constant(lPars[i].DefaultValue, lPars[i].ParameterType.GetElementType())
-        {$ELSE}
-        lRes[i] := Expression.Constant(lPars[i].RawDefaultValue, lPars[i].ParameterType.GetElementType())
-        {$ENDIF}
-      end;
-    end;
-    if lRes[i] = nil then begin
-      {$IFDEF PCL}
-      lRes[i] := Expression.Constant(lPars[i].DefaultValue, lPars[i].ParameterType);
-      {$ELSE}
-      lRes[i] := Expression.Constant(lPars[i].RawDefaultValue, lPars[i].ParameterType);
-      {$ENDIF}
-    end;
+    if lRes[i] <> nil then
+      continue;
+    var lParameterType := lPars[i].ParameterType;
+    if lParameterType.IsByRef then
+      lParameterType := lParameterType.GetElementType;
+    {$IFDEF PCL}
+    var lDefault := lPars[i].DefaultValue;
+    {$ELSE}
+    var lDefault := lPars[i].RawDefaultValue;
+    {$ENDIF}
+    // Raw metadata stores enum defaults as their underlying integral value.
+    if lParameterType.IsEnum and assigned(lDefault) then
+      lDefault := Enum.ToObject(lParameterType, lDefault);
+    lRes[i] := Expression.Constant(lDefault, lParameterType);
   end;
   exit new Tuple<MethodBase,array of Expression,Expression>(lCurrent, lRes, nil);
 end;
