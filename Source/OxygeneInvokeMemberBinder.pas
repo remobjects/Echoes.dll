@@ -18,6 +18,7 @@ type
     fTypeArgs: array of &Type;
     fName: String;
     class method GetIndexedPropertAccessors(aType: &Type; aName: String; aSet, aStatic: Boolean): List<MethodBase>;
+    class method BindArrayAccess(aTarget: DynamicMetaObject; aIndexes: array of DynamicMetaObject; aValue: DynamicMetaObject; aName: String; aFlags: OxygeneBinderFlags): DynamicMetaObject;
     class method GetIndexedEntryType(aType: &Type): &Type;
     class method GetPropertyAccessors(aType: &Type; aName: String; aStatic, aSet: Boolean): List<MethodBase>;
     class method Failure(target: DynamicMetaObject; args: array of DynamicMetaObject; errorSuggestion: DynamicMetaObject; msg: String): DynamicMetaObject;
@@ -233,6 +234,55 @@ begin
     if lMeth <> nil then result.Add(lMeth);
   end;
 end;
+class method OxygeneInvokeMemberBinder.BindArrayAccess(aTarget: DynamicMetaObject; aIndexes: array of DynamicMetaObject; aValue: DynamicMetaObject; aName: String; aFlags: OxygeneBinderFlags): DynamicMetaObject;
+begin
+  var lStatic := OxygeneBinderFlags.StaticCall in aFlags;
+  var lType := aTarget.LimitType;
+  var lRestrictions := OxygeneBinder.Restrict(nil, aTarget);
+  if lStatic and aTarget.HasValue and (aTarget.Value is &Type) then begin
+    lType := &Type(aTarget.Value);
+    lRestrictions := lRestrictions.Merge(BindingRestrictions.GetInstanceRestriction(aTarget.Expression, aTarget.Value));
+  end;
+  var lArray: Expression;
+  if String.IsNullOrEmpty(aName) then begin
+    if not lStatic and lType.IsArray then
+      lArray := Expression.Convert(aTarget.Expression, lType);
+  end else begin
+    var lFlags := BindingFlags.Public or BindingFlags.Static or BindingFlags.FlattenHierarchy or BindingFlags.IgnoreCase;
+    if not lStatic then
+      lFlags := lFlags or BindingFlags.Instance;
+    var lField := lType.GetField(aName, lFlags);
+    if assigned(lField) and lField.FieldType.IsArray then
+      lArray := Expression.Field(if lField.IsStatic then nil else Expression.Convert(aTarget.Expression, lType), lField)
+    else begin
+      var lProperty := lType.GetProperties(lFlags).FirstOrDefault(a ->
+        String.Equals(a.Name, aName, StringComparison.OrdinalIgnoreCase) and
+        (length(a.GetIndexParameters) = 0) and a.PropertyType.IsArray and assigned(a.GetGetMethod));
+      if assigned(lProperty) then
+        lArray := Expression.Property(if lProperty.GetGetMethod.IsStatic then nil else Expression.Convert(aTarget.Expression, lType), lProperty);
+    end;
+  end;
+  if not assigned(lArray) then
+    exit;
+  var lArguments := if assigned(aValue) then aIndexes.Concat([aValue]).ToArray else aIndexes;
+  if length(aIndexes) <> lArray.Type.GetArrayRank then
+    exit Failure(aTarget, lArguments, nil, Resources.strNoOverloadWithTheseParameters);
+  var lIndexes := new List<Expression>;
+  for each lIndex in aIndexes do begin
+    if &Type.GetTypeCode(lIndex.LimitType) not in [TypeCode.SByte, TypeCode.Byte,
+        TypeCode.Int16, TypeCode.UInt16, TypeCode.Int32, TypeCode.UInt32, TypeCode.Int64, TypeCode.UInt64] then
+      exit Failure(aTarget, lArguments, nil, Resources.strNoOverloadWithTheseParameters);
+    lRestrictions := OxygeneBinder.Restrict(lRestrictions, lIndex);
+    lIndexes.Add(Expression.ConvertChecked(Expression.Convert(lIndex.Expression, lIndex.LimitType), typeOf(Int32)));
+  end;
+  var lAccess: Expression := Expression.ArrayAccess(lArray, lIndexes);
+  if assigned(aValue) then begin
+    lRestrictions := OxygeneBinder.Restrict(lRestrictions, aValue);
+    lAccess := Expression.Assign(lAccess, OxygeneBinder.IntConvert(aValue.Expression, aValue.LimitType, lArray.Type.GetElementType, true));
+  end;
+  exit new DynamicMetaObject(Expression.Convert(lAccess, typeOf(Object)), lRestrictions);
+end;
+
 class method OxygeneInvokeMemberBinder.GetIndexedEntryType(aType: &Type): &Type;
 begin
   if (aType.HasElementType) then exit aType.GetElementType();
@@ -938,26 +988,30 @@ end;
 
 method OxygeneGetIndexBinder.FallbackGetIndex(target: DynamicMetaObject; indexes: array of DynamicMetaObject; errorSuggestion: DynamicMetaObject): DynamicMetaObject;
 begin
+  var lName := fName;
+  var lArray := OxygeneInvokeMemberBinder.BindArrayAccess(target, indexes, nil, lName, fFlags);
+  if assigned(lArray) then
+    exit lArray;
   var lStatic := OxygeneBinderFlags.StaticCall in fFlags;
   var lPosibilities: List<MethodBase>;
   var lRestrict := OxygeneBinder.Restrict(nil, target);
   var lType := target.LimitType;
   if lStatic and (target.HasValue) and (target.Value is &Type) then lType := target.Value as &Type;
 
-  if not lStatic and String.IsNullOrEmpty(fName) then begin
+  if not lStatic and String.IsNullOrEmpty(lName) then begin
     var lTuple := TupleIndexBinding.Bind(target, indexes);
     if assigned(lTuple) then
       exit lTuple;
   end;
 
-  if String.IsNullOrEmpty(fName) then begin
+  if String.IsNullOrEmpty(lName) then begin
     var lDefault := array of DefaultMemberAttribute(lType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;
     if lDefault = nil then exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, Resources.strNoDefaultProperty); // Normal exit for indexed access on objects implementing IDynamicMetaObjectProvider
-    fName := lDefault.MemberName;
+    lName := lDefault.MemberName;
   end;
 
-  var lField := if not lStatic then lType.GetField(fName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
-  if lField = nil then lField := lType.GetField(fName, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
+  var lField := if not lStatic then lType.GetField(lName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
+  if lField = nil then lField := lType.GetField(lName, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
   if (lField <> nil) then begin
     var lExpr: Expression := Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField);
     if (lField.FieldType.IsArray) then begin
@@ -975,11 +1029,11 @@ begin
     exit new DynamicMetaObject(lExpr, lRestrict);
   end;
 
-  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, fName, false, lStatic);
-  if (lPosibilities = nil) and (fName <> nil)  then begin
+  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, lName, false, lStatic);
+  if (lPosibilities = nil) and (lName <> nil)  then begin
     var lPos := lType.GetMethods(BindingFlags.Public or BindingFlags.Instance or BindingFlags.Static);
-    if lPos <> nil then lPos := lPos.Where(a->a.Name.ToUpper = fName.ToUpper).ToArray;
-    if length(lPos) = 0 then exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, fName, lType));
+    if lPos <> nil then lPos := lPos.Where(a->a.Name.ToUpper = lName.ToUpper).ToArray;
+    if length(lPos) = 0 then exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, String.Format(Resources.strNoPropertiesByThatName, lName, lType));
     lPosibilities := new List<MethodBase>();
     for each el in lPos do
       lPosibilities.Add(el);
@@ -1012,6 +1066,10 @@ end;
 
 method OxygeneSetIndexBinder.FallbackSetIndex(target: DynamicMetaObject; indexes: array of DynamicMetaObject; value: DynamicMetaObject; errorSuggestion: DynamicMetaObject): DynamicMetaObject;
 begin
+  var lName := fName;
+  var lArray := OxygeneInvokeMemberBinder.BindArrayAccess(target, indexes, value, lName, fFlags);
+  if assigned(lArray) then
+    exit lArray;
   var lStatic := OxygeneBinderFlags.StaticCall in fFlags;
   var lPosibilities: List<MethodBase>;
   var lRestrict := OxygeneBinder.Restrict(nil, target);
@@ -1019,14 +1077,14 @@ begin
   if lStatic and (target.HasValue) and (target.Value is &Type) then lType := target.Value as &Type;
   var args:= indexes.Concat([value]).ToArray;
 
-  if String.IsNullOrEmpty(fName) then begin
+  if String.IsNullOrEmpty(lName) then begin
     var lDefault := array of DefaultMemberAttribute(lType.GetCustomAttributes(typeOf(DefaultMemberAttribute), true)).FirstOrDefault;
     if lDefault = nil then exit OxygeneInvokeMemberBinder.Failure(target, indexes, errorSuggestion, Resources.strNoDefaultProperty); // Normal exit for indexed access on objects implementing IDynamicMetaObjectProvider
-    fName := lDefault.MemberName;
+    lName := lDefault.MemberName;
   end;
 
-  var lField := if not lStatic then lType.GetField(fName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
-  if lField = nil then lField := lType.GetField(fName, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
+  var lField := if not lStatic then lType.GetField(lName, BindingFlags.Instance or BindingFlags.Public or BindingFlags.IgnoreCase);
+  if lField = nil then lField := lType.GetField(lName, BindingFlags.Static or BindingFlags.Public or BindingFlags.IgnoreCase);
   if (lField <> nil) then begin
     var lFieldEntryType: &Type := OxygeneInvokeMemberBinder.GetIndexedEntryType(lField.FieldType);
     var lExpr: Expression := Expression.Field(iif(lField.IsStatic, nil, Expression.Convert(target.Expression, target.LimitType)), lField);
@@ -1046,7 +1104,7 @@ begin
     exit new DynamicMetaObject(lExpr, lRestrict);
   end;
 
-  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, fName, true, lStatic);
+  lPosibilities := OxygeneInvokeMemberBinder.GetIndexedPropertAccessors(lType, lName, true, lStatic);
   if lPosibilities = nil then
     exit OxygeneInvokeMemberBinder.Failure(target, args, errorSuggestion, String.Format(Resources.strNoIndexedProperties, lType));
 

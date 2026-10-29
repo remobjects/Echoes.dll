@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <ProjectGuid>{DB7985C5-B9E7-47A4-85B5-FF65E99E95CF}</ProjectGuid>
+    <Mode>Echoes</Mode><TargetFramework>.NETFramework4.8</TargetFramework>
+    <OutputType>Exe</OutputType><AssemblyName>array_index</AssemblyName>
+    <RootNamespace>ArrayIndexTests</RootNamespace>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <OutputPath>Bin/$(Configuration)</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'"><Optimize>False</Optimize></PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'"><Optimize>True</Optimize></PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib"/><Reference Include="System"/><Reference Include="System.Core"/>
+    
+    <ProjectReference Include="../../Source/Echoes.elements">
+      <Project>{7891B618-21D1-4CA9-A530-EEC2D6AFE15A}</Project>
+      <Name>Echoes</Name><ProjectFile>../../Source/Echoes.elements</ProjectFile><Private>True</Private>
+    </ProjectReference>
+    <Reference Include="Elements"><Private>True</Private></Reference>
+    <Compile Include="Program.pas"/>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)/RemObjects Software/Elements/RemObjects.Elements.Echoes.targets"/>
+</Project>
