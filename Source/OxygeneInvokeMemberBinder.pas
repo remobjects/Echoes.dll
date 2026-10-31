@@ -26,6 +26,7 @@ type
     class method FixGen(aTypeArgs: array of &Type; aType: &Type): &Type;
     class method InferTypeArguments(aParameter, anActual: &Type; aTypeArgs: array of &Type): Boolean;
     class method CloseGenericMethod(aMethod: MethodInfo; aTypeArgs: array of &Type; args: array of DynamicMetaObject): MethodInfo;
+    class method IsCompatibleArgument(aArgument: DynamicMetaObject; aType: &Type): Boolean;
     class method IsCompatibleParameterType(aSrc: &Type; aType: &Type): Boolean;
     class method GetImplicitOperator(aSrc, aDest: &Type): MethodInfo;
     class method BetterFunctionMember(aTypeArgs: array of &Type; &Params: array of DynamicMetaObject; aBest: MethodBase; aBestOffsets: array of Int32; aBestIsParams: Integer; aCurrent: MethodBase; aCurrentOffsets: array of Int32; aCurrentIsParams: Integer): Boolean;
@@ -444,14 +445,14 @@ begin
           lParType := lParType.GetElementType();
         end;
         if not lUsesArrayParam and not ((lCurrParO = lCount -1) and (lHasParamsArray) and (parI < args.Length -1)) then begin
-          if IsCompatibleParameterType(args[parI].LimitType, lParType) then begin
+          if IsCompatibleArgument(args[parI], lParType) then begin
             lOk := true;
             lCurrOffsets[parI] := lCurrParO;
             inc(lCurrParO);
             break;
           end;
         end;
-        if lParType.IsArray and lHasParamsArray and (lCurrParO = lCount -1) and  IsCompatibleParameterType(args[parI].LimitType, lParType.GetElementType) then begin
+        if lParType.IsArray and lHasParamsArray and (lCurrParO = lCount -1) and  IsCompatibleArgument(args[parI], lParType.GetElementType) then begin
           lOk := true;
           lCurrOffsets[parI] := lCurrParO;
           lUsesArrayParam := true;
@@ -559,6 +560,15 @@ begin
       exit aTypeArgs[lOffs];
   end;
   exit aType;
+end;
+
+class method OxygeneInvokeMemberBinder.IsCompatibleArgument(aArgument: DynamicMetaObject; aType: &Type): Boolean;
+begin
+  // A known null has no runtime type, but is valid for reference and nullable parameters.
+  if assigned(aType) and aArgument.HasValue and not assigned(aArgument.Value) and
+     (not aType.IsValueType or IsNullable(aType)) then
+    exit true;
+  exit IsCompatibleParameterType(aArgument.LimitType, aType);
 end;
 
 class method OxygeneInvokeMemberBinder.IsCompatibleParameterType(aSrc: &Type; aType: &Type): Boolean;
@@ -705,6 +715,11 @@ begin
   if (aType = typeOf(Object)) and (aExpr.Value = nil) then begin
     if (((aBestParam.IsValueType) and (not IsNullable(aBestParam)))) and (not ((aCurrentParam.IsValueType) and (not IsNullable(aCurrentParam)))) then    exit -1;
     if (not ((aBestParam.IsValueType) and (not IsNullable(aBestParam)))) and (((aCurrentParam.IsValueType) and (not IsNullable(aCurrentParam)))) then    exit 1;
+    // Null prefers a more specific reference/nullable parameter when one exists.
+    if aCurrentParam.IsAssignableFrom(aBestParam) and not aBestParam.IsAssignableFrom(aCurrentParam) then
+      exit 1;
+    if aBestParam.IsAssignableFrom(aCurrentParam) and not aCurrentParam.IsAssignableFrom(aBestParam) then
+      exit -1;
     exit 0
   end;
   if aType = nil then  exit 0;

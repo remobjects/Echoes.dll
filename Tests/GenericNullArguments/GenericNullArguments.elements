@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{05375648-6691-4E2A-99A1-830A506A930F}</ProjectGuid>
+    <Mode>Echoes</Mode><TargetFramework>.NETFramework4.8</TargetFramework>
+    <OutputType>Exe</OutputType><AssemblyName>GenericNullArguments</AssemblyName>
+    <StartupClass>GenericNullArguments.Program</StartupClass>
+    <EchoesRuntime Condition="'$(EchoesRuntime)' == ''">..\..\Bin\NET\Echoes.dll</EchoesRuntime>
+    <OutputPath>Bin/$(Configuration)</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Echoes"><HintPath>$(EchoesRuntime)</HintPath><Private>True</Private></Reference>
+    <Reference Include="mscorlib"/><Reference Include="System"/><Reference Include="System.Core"/>
+    <Compile Include="Program.pas"/>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)/RemObjects Software/Elements/RemObjects.Elements.Echoes.targets"/>
+</Project>
