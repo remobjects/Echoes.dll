@@ -1,0 +1,5 @@
+<test>
+  <compile>1</compile><expectsuccess>1</expectsuccess><run>1</run>
+  <expectedmessages/><expectedoutput>OK dynamic member updates</expectedoutput>
+  <important>1</important><peverify>0</peverify>
+</test>

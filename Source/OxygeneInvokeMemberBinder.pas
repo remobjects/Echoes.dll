@@ -86,7 +86,78 @@ type
     method FallbackSetIndex(target: DynamicMetaObject; indexes: array of DynamicMetaObject; value: DynamicMetaObject; errorSuggestion: DynamicMetaObject): DynamicMetaObject; override;
   end;
 
+type
+  OxygeneUpdateMemberBinder = public class(DynamicMetaObjectBinder)
+  private
+    fFlags: OxygeneBinderFlags;
+    fName: String;
+    fSubtract: Boolean;
+  public
+    constructor(aFlags: OxygeneBinderFlags; aName: String; aSubtract: Boolean);
+    method Bind(aTarget: DynamicMetaObject; aArgs: array of DynamicMetaObject): DynamicMetaObject; override;
+    class method ConvertEventHandler(aHandler: Object; aType: &Type): &Delegate;
+  end;
+
 implementation
+
+constructor OxygeneUpdateMemberBinder(aFlags: OxygeneBinderFlags; aName: String; aSubtract: Boolean);
+begin
+  fFlags := aFlags;
+  fName := aName;
+  fSubtract := aSubtract;
+end;
+
+class method OxygeneUpdateMemberBinder.ConvertEventHandler(aHandler: Object; aType: &Type): &Delegate;
+begin
+  if not assigned(aHandler) then
+    exit nil;
+  if not (aHandler is &Delegate) then
+    raise new OxygeneBinderException(Resources.strInvalidOperator);
+  var lDelegate := &Delegate(aHandler);
+  if aType.IsInstanceOfType(lDelegate) then
+    exit lDelegate;
+  // Keep the invocation list intact; removal must recreate equal delegate entries.
+  for each lHandler in lDelegate.GetInvocationList do
+    result := &Delegate.Combine(result, &Delegate.CreateDelegate(aType, lHandler.Target, lHandler.Method));
+end;
+
+method OxygeneUpdateMemberBinder.Bind(aTarget: DynamicMetaObject; aArgs: array of DynamicMetaObject): DynamicMetaObject;
+begin
+  if not aTarget.HasValue or aArgs.Any(a -> not a.HasValue) then
+    exit Defer(aTarget, aArgs);
+  if length(aArgs) <> 1 then
+    raise new ArgumentException('A member update requires one value.');
+  var lStatic := OxygeneBinderFlags.StaticCall in fFlags;
+  var lType := if lStatic then &Type(aTarget.Value) else aTarget.LimitType;
+  var lRestrictions := if lStatic then BindingRestrictions.GetInstanceRestriction(aTarget.Expression, aTarget.Value)
+    else OxygeneBinder.Restrict(nil, aTarget);
+  lRestrictions := OxygeneBinder.Restrict(lRestrictions, aArgs[0]);
+  var lEvent := lType.GetEvent(fName, BindingFlags.Public or BindingFlags.IgnoreCase or
+    if lStatic then BindingFlags.Static or BindingFlags.FlattenHierarchy else BindingFlags.Instance);
+  if assigned(lEvent) then begin
+    var lAccessor := if fSubtract then lEvent.GetRemoveMethod else lEvent.GetAddMethod;
+    if not assigned(lAccessor) then
+      raise new OxygeneBinderException(String.Format(Resources.strNoMethodsByThatName, fName, lType));
+    var lHandler := Expression.Convert(
+      Expression.Call(typeOf(OxygeneUpdateMemberBinder), 'ConvertEventHandler', nil,
+        Expression.Invoke(Expression.Convert(aArgs[0].Expression, typeOf(Func<Object>))), Expression.Constant(lEvent.EventHandlerType)),
+      lEvent.EventHandlerType);
+    var lCall := Expression.Call(if lStatic then nil else Expression.Convert(aTarget.Expression, lAccessor.DeclaringType), lAccessor, lHandler);
+    exit new DynamicMetaObject(Expression.Block(lCall, Expression.Constant(nil, typeOf(Object))), lRestrictions);
+  end;
+
+  // Ordinary fields/properties retain dynamic get, arithmetic and set behavior.
+  // The receiver and right operand are call-site parameters, already evaluated once.
+  var lGet := Expression.Dynamic(OxygeneBinder.InvokeMember(fFlags or OxygeneBinderFlags.GetMember,
+    fName, nil, []), typeOf(Object), aTarget.Expression);
+  var lValue := Expression.Dynamic(OxygeneBinder.BinaryOperation(OxygeneBinderFlags.None,
+    if fSubtract then ExpressionType.Subtract else ExpressionType.Add,
+    new OxygeneArgument(OxygeneArgumentMode.None), new OxygeneArgument(OxygeneArgumentMode.None)),
+    typeOf(Object), lGet, Expression.Invoke(Expression.Convert(aArgs[0].Expression, typeOf(Func<Object>))));
+  var lSet := Expression.Dynamic(OxygeneBinder.InvokeMember(fFlags or OxygeneBinderFlags.SetMember,
+    fName, nil, [new OxygeneArgument(OxygeneArgumentMode.None)]), typeOf(Object), aTarget.Expression, lValue);
+  exit new DynamicMetaObject(lSet, lRestrictions);
+end;
 
 method OxygeneInvokeMemberBinder.FallbackInvoke(target: System.Dynamic.DynamicMetaObject; args: array of System.Dynamic.DynamicMetaObject; errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject;
 begin

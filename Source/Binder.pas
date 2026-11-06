@@ -48,6 +48,8 @@ type
     class method IntConvert(aExpr: Expression; aCurrType, aType: &Type; aCheckCast: Boolean): Expression;
   public
     class method BinaryOperation(aFlags: OxygeneBinderFlags; aOperator: ExpressionType; aArg1, aArg2: OxygeneArgument): CallSiteBinder;
+    // Call site arguments are the receiver and a Func<Object> for the right operand.
+    class method UpdateMember(aFlags: OxygeneBinderFlags; aName: String; aSubtract: Boolean): CallSiteBinder;
     class method UnaryOperation(aflags: OxygeneBinderFlags; aOperator: ExpressionType; aArg: OxygeneArgument): CallSiteBinder;
     class method Convert(aFlags: OxygeneBinderFlags; aTarget: &Type): CallSiteBinder;
     class method Invoke(aFlags: OxygeneBinderFlags; aArgs: array of OxygeneArgument): CallSiteBinder;
@@ -60,6 +62,11 @@ type
   end;
 
 implementation
+
+class method OxygeneBinder.UpdateMember(aFlags: OxygeneBinderFlags; aName: String; aSubtract: Boolean): CallSiteBinder;
+begin
+  exit new OxygeneUpdateMemberBinder(aFlags, aName, aSubtract);
+end;
 
 class method OxygeneBinder.BinaryOperation(aFlags: OxygeneBinderFlags; aOperator: ExpressionType; aArg1, aArg2: OxygeneArgument): CallSiteBinder;
 begin
