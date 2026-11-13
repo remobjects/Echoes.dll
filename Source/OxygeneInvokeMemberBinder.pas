@@ -492,18 +492,18 @@ begin
     lParamsParameterOffset[i] := -1;
     var lPars := aPosibilities[i].GetParameters;
     var lCount := lPars.Length;
-    var lDef: Integer := 0;
-    var lHasParamsArray: Boolean := false;
-    for j: Integer := 0 to lCount -1 do begin
-      if ParameterAttributes.HasDefault in lPars[j].Attributes  then inc(lDef);
-      if ParameterAttributes.Optional in lPars[j].Attributes  then inc(lDef);
-    end;
-    //for j: Integer := 0 to lCount -1 do if ParameterAttributes.HasDefault in lPars[j].Attributes  then inc(lDef);
-    if (lCount = 0) or (length(lPars[lCount-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) = 0) then begin
-      if (args.Length < lCount - lDef) or (args.Length > lCount) then continue;
-      lHasParamsArray := false;
-    end else
-     lHasParamsArray := true;
+    var lHasParamsArray := (lCount > 0) and lPars[lCount - 1].ParameterType.IsArray and
+      (length(lPars[lCount - 1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0);
+    // Params may be empty, but preceding required parameters must be supplied.
+    // Optional and HasDefault can both be set on one parameter; count it once.
+    var lRequired := 0;
+    for j: Integer := 0 to lCount - 1 do
+      if not (lHasParamsArray and (j = lCount - 1)) and
+         not (ParameterAttributes.HasDefault in lPars[j].Attributes) and
+         not (ParameterAttributes.Optional in lPars[j].Attributes) then
+        inc(lRequired);
+    if (args.Length < lRequired) or (not lHasParamsArray and (args.Length > lCount)) then
+      continue;
     lCurrOffsets := new Integer[args.Length];
     var lCurrParO := 0;
     var lUsesArrayParam: Boolean := false;
@@ -609,6 +609,15 @@ begin
     var lParameterType := lPars[i].ParameterType;
     if lParameterType.IsByRef then
       lParameterType := lParameterType.GetElementType;
+    // No expanded elements were supplied for this params slot. Its metadata
+    // default is a sentinel, not an array: using Expression.Constant on that
+    // value throws before String.Split() or another zero-element call runs.
+    // Explicit arrays/nulls were assigned above and must remain unchanged.
+    if (i = lRes.Length - 1) and lParameterType.IsArray and
+       (length(lPars[i].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0) then begin
+      lRes[i] := Expression.NewArrayInit(lParameterType.GetElementType, new Expression[0]);
+      continue;
+    end;
     {$IFDEF PCL}
     var lDefault := lPars[i].DefaultValue;
     {$ELSE}

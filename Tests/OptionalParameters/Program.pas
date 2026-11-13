@@ -1,10 +1,35 @@
-// Positive regression guards: dynamic calls preserve omitted and explicit optional defaults, including enums.
+// Positive guards preserve optional defaults and omitted/expanded/explicit params
+// arrays. Negative guards reject missing required arguments before params arrays.
 namespace OptionalParameterTests;
-uses System;
+uses System, System.Runtime.CompilerServices, RemObjects.Elements.Dynamic;
 type
   Format = public enum (Compact = 0, HumanReadable = 7);
   Target = public class
   public
+    method ParamsCount(params aValues: array of Integer): Integer;
+    begin
+      exit if assigned(aValues) then length(aValues) else -1;
+    end;
+    method OptionalAndParams(aFormat: Format := Format.HumanReadable; params aValues: array of Integer): Integer;
+    begin
+      exit Integer(aFormat) * 100 + length(aValues);
+    end;
+    method RequiredAndParams(aLabel: String; params aValues: array of Integer): Integer;
+    begin
+      exit length(aValues);
+    end;
+    method RequiredAndOptional(aNumber: Integer; aFormat: Format := Format.HumanReadable): Integer;
+    begin
+      exit aNumber + Integer(aFormat);
+    end;
+    method GenericParams<T>(params aValues: array of T): Integer;
+    begin
+      exit length(aValues);
+    end;
+    class method StaticParams(params aValues: array of String): Integer;
+    begin
+      exit length(aValues);
+    end;
     method EnumDefault(aFormat: Format := Format.HumanReadable): Integer;
     begin
       exit Integer(aFormat);
@@ -20,6 +45,14 @@ type
     method NullDefault(aValue: Object := nil): Boolean;
     begin
       exit aValue = nil;
+    end;
+  end;
+  ParamsConstructor = public class
+  public
+    property Count: Integer;
+    constructor(params aValues: array of Integer);
+    begin
+      Count := length(aValues);
     end;
   end;
   Program = class
@@ -48,6 +81,55 @@ type
         raise new Exception('JSON omitted format');
       if String(lJson.ToJsonString(RemObjects.Elements.RTL.JsonFormat.Minimal)) <> lTypedJson.ToJsonString(RemObjects.Elements.RTL.JsonFormat.Minimal) then
         raise new Exception('JSON explicit format');
+      if Integer(lTarget.ParamsCount()) <> 0 then
+        raise new Exception('omitted params array');
+      if Integer(lTarget.ParamsCount(4)) <> 1 then
+        raise new Exception('one expanded params element');
+      if Integer(lTarget.ParamsCount(4, 5)) <> 2 then
+        raise new Exception('expanded params elements');
+      if Integer(lTarget.ParamsCount(lArray)) <> 1 then
+        raise new Exception('explicit params array');
+      var lNull: Object := nil;
+      if Integer(lTarget.ParamsCount(lNull)) <> -1 then
+        raise new Exception('explicit null params array');
+      if Integer(lTarget.OptionalAndParams()) <> 700 then
+        raise new Exception('optional enum followed by omitted params');
+      if Integer(lTarget.OptionalAndParams(Format.Compact, 1, 2)) <> 2 then
+        raise new Exception('explicit enum followed by expanded params');
+      var lStatic := CallSite<Func<CallSite, Object, Object>>.Create(
+        OxygeneBinder.InvokeMember(OxygeneBinderFlags.StaticCall, 'StaticParams', nil, []));
+      if Integer(lStatic.Target(lStatic, typeOf(Target))) <> 0 then
+        raise new Exception('static omitted params');
+      var lConstructor := CallSite<Func<CallSite, Object, Object>>.Create(
+        OxygeneBinder.Invoke(OxygeneBinderFlags.StaticCall, []));
+      if ParamsConstructor(lConstructor.Target(lConstructor, typeOf(ParamsConstructor))).Count <> 0 then
+        raise new Exception('constructor omitted params');
+      var lGeneric := CallSite<Func<CallSite, Object, Object>>.Create(
+        OxygeneBinder.InvokeMember(OxygeneBinderFlags.None, 'GenericParams', [typeOf(String)], []));
+      if Integer(lGeneric.Target(lGeneric, Object(lTarget))) <> 0 then
+        raise new Exception('closed generic omitted params');
+      var lText: dynamic := '5 + 3';
+      var lWords := array of String(lText.Split());
+      if (length(lWords) <> 3) or (lWords[0] <> '5') or (lWords[2] <> '3') then
+        raise new Exception('String.Split omitted params');
+      var lRejected := false;
+      try
+        lTarget.RequiredAndParams();
+      except
+        on OxygeneBinderException do
+          lRejected := true;
+      end;
+      if not lRejected then
+        raise new Exception('missing required prefix accepted');
+      lRejected := false;
+      try
+        lTarget.RequiredAndOptional();
+      except
+        on OxygeneBinderException do
+          lRejected := true;
+      end;
+      if not lRejected then
+        raise new Exception('optional/default flags counted twice');
       Console.WriteLine('OK optional parameters');
     end;
   end;

@@ -1,0 +1,5 @@
+<test>
+  <compile>1</compile><expectsuccess>1</expectsuccess><run>1</run>
+  <expectedoutput>OK optional parameters</expectedoutput>
+  <ignoremessages>1</ignoremessages>
+</test>
